@@ -1,0 +1,53 @@
+# Personal Medication & Symptom Journal — Build Specification
+
+**Status:** Approved product baseline / implementation handoff  
+**Date:** 2026-11-17  
+**Working name:** Health Journal (replace branding, identifiers and icons before release)  
+**Owner decision:** Free forever, no ads, no subscriptions, no account, no backend, **one profile only**.
+
+## Read order for Claude / Codex
+
+1. `01-PRODUCT-REQUIREMENTS.md` — functional scope and UX
+2. `02-ARCHITECTURE-AND-DATA.md` — Flutter structure, database, domain invariants
+3. `03-SECURITY-BACKUP-RESTORE.md` — encryption, credentials, backups, portability
+4. `04-PLATFORM-AND-DEMO.md` — iOS, Android, demo-only web/PWA, optional desktop
+5. `05-IMPLEMENTATION-PLAN-AND-TESTS.md` — work packages and acceptance criteria
+6. `AGENTS.md` — instructions for coding agents
+
+## Product statement
+
+A private, offline-first **single-person** medication and symptom journal, with scheduled and as-needed medications, administration records, pain location mapping, symptoms and measurements, reminders, trends, doctor-ready PDF/CSV exports, and user-controlled portable encrypted backups. Public Flutter Web is **a fictional, reset-on-reload demo only**, never a production medical record system.
+
+## Non-negotiable constraints
+
+- **iOS and Android:** full local-first production apps; core operation does not require internet.
+- **Web:** interactive public PWA **demo exclusively**; fictional dataset, no real data, reset to seed data on every full load/reload; no browser-persistent user health record.
+- **macOS/Windows/Linux:** optional, not a release blocker; only ship if fully supported and tested. Do not use their existence to expand MVP.
+- **Exactly one profile** per app installation. No accounts, login, registration, profile switching, family mode, or backend.
+- **Completely free:** no paywall, ads, subscriptions, purchase SDKs, tracking SDKs or monetisation tiers.
+- **No AI diagnosis, medication recommendations, automated dosing advice or causal claims.** The app records and presents self-reported data.
+- **Private by design:** local encrypted database; no transmission of medical data to developer-operated infrastructure.
+- **Portable recovery:** password-encrypted backup can be restored on a replacement phone without access to the original phone, app secret or old device key.
+- **Loss-aware restore:** fresh installation loads a backup as its only profile; populated installation requires explicit replace confirmation, no merges in v1.
+- **Shared business logic:** platform capability adapters, no parallel feature implementations for demo vs native.
+
+## Out of scope for v1
+
+Cloud sync, multi-device live synchronisation, multiple profiles, clinician portal, real medical advice, prescription fulfillment, medication interaction checker, social/community features, automatic AI analysis, scanning/OCR, in-app purchases, advertising, account recovery service, automated off-device upload, and direct syncing of Apple Health Medications.
+
+## Unresolved release-time inputs (do not block implementation)
+
+Final product name, bundle IDs/package IDs, brand assets, privacy-policy URL, support contact, supported OS minimum versions, app-store listing copy, publisher legal details. Use clearly named placeholders and keep configuration centralised.
+
+## Official starting points
+
+- Flutter web: https://docs.flutter.dev/platform-integration/web/faq
+- Flutter web deployment: https://docs.flutter.dev/deployment/web
+- Drift encryption: https://drift.simonbinder.eu/platforms/encryption/
+- Drift: https://drift.simonbinder.eu/
+- Flutter local auth: https://pub.dev/packages/local_auth
+- Flutter local notifications: https://pub.dev/packages/flutter_local_notifications
+- Health integration: https://pub.dev/packages/health
+- TGA exclusions: https://www.tga.gov.au/products/medical-devices/software-and-artificial-intelligence-ai/overview/software-based-medical-device-exclusions
+
+**Note:** Package versions and platform policies evolve. Verify current official docs at implementation time. Never claim unverified plugin support.
