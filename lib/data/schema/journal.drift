@@ -1,0 +1,62 @@
+CREATE TABLE profile (
+  singleton INTEGER NOT NULL PRIMARY KEY CHECK (singleton = 1),
+  name TEXT,
+  date_of_birth TEXT
+);
+CREATE TABLE medications (
+  id TEXT NOT NULL PRIMARY KEY,
+  name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+  strength TEXT NOT NULL,
+  archived INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0,1)),
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE medication_regimens (
+  id TEXT NOT NULL PRIMARY KEY,
+  medication_id TEXT NOT NULL REFERENCES medications(id),
+  amount REAL NOT NULL CHECK (amount > 0),
+  unit TEXT NOT NULL CHECK (length(trim(unit)) > 0),
+  kind TEXT NOT NULL CHECK (kind IN ('fixed','prn','course')),
+  effective_from INTEGER NOT NULL,
+  effective_to INTEGER CHECK (effective_to >= effective_from),
+  instructions_snapshot TEXT NOT NULL
+);
+CREATE TABLE medication_events (
+  id TEXT NOT NULL PRIMARY KEY,
+  regimen_id TEXT NOT NULL REFERENCES medication_regimens(id),
+  occurrence_key TEXT,
+  status TEXT NOT NULL CHECK (status IN ('taken','skipped','missed','unknown')),
+  intended_at INTEGER,
+  taken_at INTEGER,
+  recorded_at INTEGER NOT NULL,
+  amount REAL NOT NULL CHECK (amount > 0),
+  unit TEXT NOT NULL CHECK (length(trim(unit)) > 0),
+  medication_snapshot TEXT NOT NULL,
+  CHECK ((status = 'taken' AND taken_at IS NOT NULL) OR
+         (status != 'taken' AND taken_at IS NULL))
+);
+CREATE INDEX medication_events_time ON medication_events(recorded_at);
+CREATE TABLE symptom_entries (
+  id TEXT NOT NULL PRIMARY KEY,
+  title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+  onset_at INTEGER NOT NULL,
+  end_at INTEGER CHECK (end_at >= onset_at),
+  recorded_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  severity INTEGER CHECK (severity BETWEEN 0 AND 10),
+  notes TEXT NOT NULL DEFAULT ''
+);
+CREATE TABLE pain_markers (
+  id TEXT NOT NULL PRIMARY KEY,
+  symptom_id TEXT NOT NULL REFERENCES symptom_entries(id),
+  body_view TEXT NOT NULL CHECK (body_view IN ('front','back')),
+  x REAL NOT NULL CHECK (x BETWEEN 0 AND 1),
+  y REAL NOT NULL CHECK (y BETWEEN 0 AND 1),
+  radius REAL CHECK (radius BETWEEN 0 AND 1),
+  body_asset_version TEXT NOT NULL,
+  region_code TEXT NOT NULL,
+  laterality TEXT NOT NULL CHECK (laterality IN ('left','right','midline','bilateral','unspecified')),
+  severity INTEGER NOT NULL CHECK (severity BETWEEN 0 AND 10),
+  pain_type TEXT NOT NULL CHECK (pain_type IN ('aching','sharp','burning','throbbing','tingling','other'))
+);
+CREATE INDEX symptoms_time ON symptom_entries(onset_at);

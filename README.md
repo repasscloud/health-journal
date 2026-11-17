@@ -51,3 +51,37 @@ Final product name, bundle IDs/package IDs, brand assets, privacy-policy URL, su
 - TGA exclusions: https://www.tga.gov.au/products/medical-devices/software-and-artificial-intelligence-ai/overview/software-based-medical-device-exclusions
 
 **Note:** Package versions and platform policies evolve. Verify current official docs at implementation time. Never claim unverified plugin support.
+
+## Development (implementation in progress)
+
+See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for actual readiness. Native
+record entry is currently gated pending release encryption verification on both targets.
+The web app is always a volatile fictional demo; no environment flag enables production
+web records. Reloading or opening a new tab constructs a new fixture.
+
+```sh
+flutter pub get --enforce-lockfile
+dart run build_runner build
+flutter analyze
+flutter test
+flutter build web --release
+flutter build apk --release
+flutter build ios --release --no-codesign
+```
+
+Browser acceptance: `npm ci --prefix tool/browser`, then
+`npx --prefix tool/browser playwright test --config tool/browser/playwright.config.cjs`.
+The test uses installed Chrome and serves the web release build locally.
+
+Native encryption probe (fictional data only):
+`flutter run --release -d DEVICE_ID -t tool/native_encryption_probe.dart --no-resident`.
+Confirm `HEALTH_JOURNAL_ENCRYPTION_PROOF:PASS` in device logs. Test on both mobile OSes;
+a build alone is insufficient. This target replaces the development app with a probe,
+so use a dedicated test installation, never a personal-record installation.
+
+Production design: local-only, one person, no accounts or backend. Portable recovery will
+require the backup file and its password; a forgotten password cannot be recovered by a
+server. Notifications will be best effort. PDF/CSV exports will be readable files and
+must be shared carefully. The journal provides no medical advice. These later workflows
+are not yet implemented. Publisher IDs, icons, privacy policy and support details must be
+set before release. No signing team or credentials are committed.
