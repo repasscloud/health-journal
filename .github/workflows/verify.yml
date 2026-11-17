@@ -6,7 +6,7 @@ jobs:
   checks:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.47.9'
@@ -18,7 +18,7 @@ jobs:
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@vv7
         with:
           node-version: '22'
       - run: npm ci --prefix tool/browser
