@@ -7,7 +7,11 @@ async function boot(page) {
 test('reload, independent tabs and browser storage', async ({ page, context }) => {
   await boot(page);
   await page.getByRole('button', { name: 'Add fictional medication' }).click();
-  await page.getByRole('textbox').fill('Fictional browser edit');
+  const name = page.getByRole('textbox', { name: 'Medication name', exact: true });
+  await name.click();
+  await expect(name).toBeFocused();
+  await name.pressSequentially('Fictional browser edit', { delay: 100 });
+  await expect(name).toHaveValue('Fictional browser edit');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
   await expect(page.getByRole('group', { name: /Fictional browser edit/ })).toBeVisible();
   const storage = await page.evaluate(async () => ({

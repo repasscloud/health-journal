@@ -4,6 +4,7 @@ import 'package:uuid/uuid.dart';
 import '../../data/repositories/journal_repository.dart';
 import '../../domain/medication.dart';
 import '../../domain/regimen.dart';
+import 'medication_editor.dart';
 
 class MedicationActions extends StatefulWidget {
   const MedicationActions({
@@ -22,13 +23,42 @@ class MedicationActions extends StatefulWidget {
 class _MedicationActionsState extends State<MedicationActions> {
   Future<void> addRegimen({Regimen? previous}) async {
     final form = GlobalKey<FormState>();
-    final amount = TextEditingController();
-    final unit = TextEditingController();
-    final instructions = TextEditingController();
-    final end = TextEditingController();
-    var kind = ScheduleKind.prn;
-    var time = const TimeOfDay(hour: 8, minute: 0);
-    final weekdays = <int>{1, 2, 3, 4, 5, 6, 7};
+    final amount = TextEditingController(
+      text: previous == null ? '' : '${previous.amount}',
+    );
+    final unit = TextEditingController(text: previous?.unit ?? '');
+    final instructions = TextEditingController(
+      text: previous?.instructions ?? '',
+    );
+    final end = TextEditingController(
+      text:
+          previous?.effectiveTo?.toLocal().toIso8601String().substring(0, 10) ??
+          '',
+    );
+    final start = TextEditingController(
+      text: DateTime.now().toLocal().toIso8601String().substring(0, 10),
+    );
+    var kind = previous?.kind ?? ScheduleKind.prn;
+    final times = <TimeOfDay>[
+      if (previous != null && previous.rules.isNotEmpty)
+        for (final rule in previous.rules)
+          TimeOfDay(hour: rule.hour, minute: rule.minute)
+      else
+        const TimeOfDay(hour: 8, minute: 0),
+    ];
+    final weekdays = <int>{
+      if (previous != null && previous.rules.isNotEmpty)
+        ...previous.rules.expand((r) => r.weekdays)
+      else ...{
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+      },
+    };
     String? error;
     await showDialog<void>(
       context: context,
@@ -45,6 +75,20 @@ class _MedicationActionsState extends State<MedicationActions> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
+                  TextFormField(
+                    controller: start,
+                    enabled: previous == null,
+                    decoration: const InputDecoration(
+                      labelText: 'Effective start date (YYYY-MM-DD)',
+                    ),
+                    validator: (v) {
+                      final d = DateTime.tryParse(v ?? '');
+                      return d == null ||
+                              d.toIso8601String().substring(0, 10) != v
+                          ? 'Enter a valid date.'
+                          : null;
+                    },
+                  ),
                   DropdownButtonFormField<ScheduleKind>(
                     isExpanded: true,
                     initialValue: kind,
@@ -89,15 +133,39 @@ class _MedicationActionsState extends State<MedicationActions> {
                     decoration: const InputDecoration(labelText: 'Directions'),
                   ),
                   if (kind != ScheduleKind.prn) ...[
+                    for (var i = 0; i < times.length; i++)
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextButton(
+                              onPressed: () async {
+                                final chosen = await showTimePicker(
+                                  context: context,
+                                  initialTime: times[i],
+                                );
+                                if (chosen != null) {
+                                  update(() => times[i] = chosen);
+                                }
+                              },
+                              child: Text(
+                                'Local time: ${times[i].format(context)}',
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            tooltip: 'Remove time',
+                            onPressed: times.length == 1
+                                ? null
+                                : () => update(() => times.removeAt(i)),
+                            icon: const Icon(Icons.remove_circle_outline),
+                          ),
+                        ],
+                      ),
                     TextButton(
-                      onPressed: () async {
-                        final chosen = await showTimePicker(
-                          context: context,
-                          initialTime: time,
-                        );
-                        if (chosen != null) update(() => time = chosen);
-                      },
-                      child: Text('Local time: ${time.format(context)}'),
+                      onPressed: () => update(
+                        () => times.add(const TimeOfDay(hour: 18, minute: 0)),
+                      ),
+                      child: const Text('Add time'),
                     ),
                     const Text('Weekdays (device local time)'),
                     Wrap(
@@ -138,7 +206,7 @@ class _MedicationActionsState extends State<MedicationActions> {
                       },
                     ),
                   const Text(
-                    'Effective now. No reminders are scheduled in demo.',
+                    'New regimens use the start date at local midnight. Revisions take effect now. No demo reminders.',
                   ),
                   if (error != null) Text(error!),
                 ],
@@ -160,7 +228,9 @@ class _MedicationActionsState extends State<MedicationActions> {
                     amount: double.parse(amount.text),
                     unit: unit.text,
                     kind: kind,
-                    effectiveFrom: DateTime.now().toUtc(),
+                    effectiveFrom: previous == null
+                        ? DateTime.parse(start.text).toUtc()
+                        : DateTime.now().toUtc(),
                     effectiveTo: kind == ScheduleKind.course
                         ? DateTime.parse(end.text).toUtc()
                         : null,
@@ -168,11 +238,12 @@ class _MedicationActionsState extends State<MedicationActions> {
                     rules: kind == ScheduleKind.prn
                         ? []
                         : [
-                            ScheduleRule(
-                              hour: time.hour,
-                              minute: time.minute,
-                              weekdays: weekdays,
-                            ),
+                            for (final time in times)
+                              ScheduleRule(
+                                hour: time.hour,
+                                minute: time.minute,
+                                weekdays: weekdays,
+                              ),
                           ],
                   );
                   if (previous == null) {
@@ -184,8 +255,7 @@ class _MedicationActionsState extends State<MedicationActions> {
                   Navigator.pop(context);
                 } on ArgumentError {
                   update(
-                    () => error =
-                        'Choose at least one weekday and valid dose and dates.',
+                    () => error = 'Choose weekdays, distinct times, a valid dose and dates.',
                   );
                 } on StateError {
                   update(
@@ -200,12 +270,12 @@ class _MedicationActionsState extends State<MedicationActions> {
       ),
     );
     await Future<void>.delayed(const Duration(milliseconds: 300));
-    for (final c in [amount, unit, instructions, end]) {
+    for (final c in [amount, unit, instructions, end, start]) {
       c.dispose();
     }
   }
 
-  Future<void> record(Regimen regimen) async {
+  Future<void> record(Regimen regimen, {Administration? original}) async {
     final status = await showDialog<AdministrationStatus>(
       context: context,
       builder: (context) => SimpleDialog(
@@ -224,16 +294,143 @@ class _MedicationActionsState extends State<MedicationActions> {
       ),
     );
     if (status == null || !mounted) return;
+    final selectedDate = await showDatePicker(
+      context: context,
+      initialDate: (original?.occurredAt ?? DateTime.now()).toLocal(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (selectedDate == null || !mounted) return;
+    final selectedTime = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.fromDateTime(
+        (original?.occurredAt ?? DateTime.now()).toLocal(),
+      ),
+    );
+    if (selectedTime == null || !mounted) return;
+    final occurred = DateTime(
+      selectedDate.year,
+      selectedDate.month,
+      selectedDate.day,
+      selectedTime.hour,
+      selectedTime.minute,
+    ).toUtc();
+    final reason = TextEditingController();
+    final actualAmount = TextEditingController(
+      text: '${original?.amount ?? regimen.amount}',
+    );
+    final actualUnit = TextEditingController(
+      text: original?.unit ?? regimen.unit,
+    );
+    final notes = TextEditingController(text: original?.notes ?? '');
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          original == null
+              ? 'Confirm fictional entry'
+              : 'Correct fictional entry',
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Event time: ${occurred.toLocal()} • $status. Existing entries are retained; check for duplicates.',
+              ),
+              TextField(
+                controller: actualAmount,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: const InputDecoration(
+                  labelText: 'Recorded dose amount',
+                ),
+              ),
+              TextField(
+                controller: actualUnit,
+                decoration: const InputDecoration(
+                  labelText: 'Recorded dose unit',
+                ),
+              ),
+              TextField(
+                controller: notes,
+                decoration: const InputDecoration(labelText: 'Entry notes'),
+              ),
+              if (original != null)
+                TextField(
+                  controller: reason,
+                  decoration: const InputDecoration(
+                    labelText: 'Correction reason (required)',
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              if (original == null || reason.text.trim().isNotEmpty) {
+                Navigator.pop(context, true);
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Enter a correction reason.')),
+                );
+              }
+            },
+            child: const Text('Confirm entry'),
+          ),
+        ],
+      ),
+    );
+    final doseAmount = double.tryParse(actualAmount.text);
+    final doseUnit = actualUnit.text;
+    final noteText = notes.text;
+    final reasonText = reason.text;
+    await Future<void>.delayed(const Duration(milliseconds: 300));
+    actualAmount.dispose();
+    actualUnit.dispose();
+    reason.dispose();
+    notes.dispose();
+    if (accepted != true || !mounted) return;
     try {
+      if (doseAmount == null) throw ArgumentError('Invalid dose.');
+      if (!regimen.contains(occurred)) throw ArgumentError('Outside regimen.');
       final now = DateTime.now().toUtc();
       widget.repository.recordAdministration(
-        regimen.record(
-          eventId: const Uuid().v4(),
-          medication: widget.medication,
-          status: status,
-          recordedAt: now,
-          takenAt: status == AdministrationStatus.taken ? now : null,
-        ),
+        original != null
+            ? Administration(
+                id: const Uuid().v4(),
+                medicationId: original.medicationId,
+                medicationNameSnapshot: original.medicationNameSnapshot,
+                medicationSnapshot: original.medicationSnapshot,
+                regimenId: original.regimenId,
+                regimenSnapshot: original.regimenSnapshot,
+                status: status,
+                recordedAt: now,
+                occurredAt: occurred,
+                takenAt: status == AdministrationStatus.taken ? occurred : null,
+                amount: doseAmount,
+                unit: doseUnit,
+                notes: noteText,
+                correctsId: original.id,
+                correctionReason: reasonText,
+              )
+            : regimen.record(
+                eventId: const Uuid().v4(),
+                medication: widget.medication,
+                status: status,
+                recordedAt: now,
+                takenAt: status == AdministrationStatus.taken ? occurred : null,
+                occurredAt: occurred,
+                notes: noteText,
+                actualAmount: doseAmount,
+                actualUnit: doseUnit,
+              ),
       );
       widget.onChanged();
     } catch (_) {
@@ -241,7 +438,7 @@ class _MedicationActionsState extends State<MedicationActions> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Could not record this status. Check the regimen effective dates.',
+              'Could not save: check the dose, unit and event time (within regimen dates and not in the future).',
             ),
           ),
         );
@@ -262,7 +459,19 @@ class _MedicationActionsState extends State<MedicationActions> {
       children: [
         ListTile(
           title: Text(widget.medication.name),
-          subtitle: Text(widget.medication.strength),
+          subtitle: Text(
+            '${widget.medication.strength} ${widget.medication.strengthUnit} • ${widget.medication.form}${widget.medication.archived ? ' • archived' : ''}',
+          ),
+          trailing: IconButton(
+            tooltip: 'Edit medication',
+            icon: const Icon(Icons.edit),
+            onPressed: () => editMedication(
+              context,
+              widget.repository,
+              widget.onChanged,
+              previous: widget.medication,
+            ),
+          ),
         ),
         for (final r in regimens)
           Padding(
@@ -274,9 +483,18 @@ class _MedicationActionsState extends State<MedicationActions> {
           ),
         for (final e in events)
           ListTile(
+            trailing: events.any((c) => c.correctsId == e.id)
+                ? const Text('Superseded')
+                : TextButton(
+                    onPressed: () => record(
+                      regimens.firstWhere((r) => r.id == e.regimenId),
+                      original: e,
+                    ),
+                    child: const Text('Correct'),
+                  ),
             title: Text('${e.status.name} • ${e.amount} ${e.unit}'),
             subtitle: Text(
-              '${e.medicationNameSnapshot} • ${e.recordedAt.toLocal()}',
+              '${e.medicationNameSnapshot} • event ${e.occurredAt.toLocal()} • entered ${e.recordedAt.toLocal()}\n${e.notes} ${e.correctionReason}',
             ),
           ),
         if (events.isEmpty)
@@ -286,10 +504,12 @@ class _MedicationActionsState extends State<MedicationActions> {
           ),
         Wrap(
           children: [
-            TextButton(onPressed: addRegimen, child: const Text('Add regimen')),
-            for (final r in regimens.where(
-              (r) => r.contains(DateTime.now().toUtc()),
-            ))
+            if (!widget.medication.archived)
+              TextButton(
+                onPressed: addRegimen,
+                child: const Text('Add regimen'),
+              ),
+            for (final r in regimens)
               TextButton(
                 onPressed: () => record(r),
                 child: const Text('Record status'),

@@ -9,6 +9,7 @@ abstract interface class JournalRepository {
   void addMeasurement(Measurement measurement);
   List<TimelineItem> timeline({String search = ''});
   List<Medication> get medications;
+  List<Medication> get medicationHistory;
   List<Regimen> get regimens;
   void addRegimen(Regimen regimen);
   void reviseRegimen(String previousId, Regimen revision);

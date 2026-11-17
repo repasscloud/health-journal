@@ -8,17 +8,56 @@ final class Medication {
     required this.strength,
     required this.createdAt,
     this.archived = false,
-  }) : name = name.trim() {
+    this.genericName = '',
+    this.brand = '',
+    this.form = '',
+    this.strengthUnit = '',
+    this.instructions = '',
+    this.reason = '',
+    this.prescribedBy = '',
+    this.notes = '',
+    this.startedAt,
+    this.stoppedAt,
+    this.pausedAt,
+    DateTime? updatedAt,
+  }) : name = name.trim(),
+       updatedAt = updatedAt ?? createdAt {
     if (id.isEmpty || this.name.isEmpty) {
       throw ArgumentError('A medication needs an ID and name.');
     }
-    if (!createdAt.isUtc) throw ArgumentError('Use UTC timestamps.');
+    if ([
+          createdAt,
+          this.updatedAt,
+          startedAt,
+          stoppedAt,
+          pausedAt,
+        ].whereType<DateTime>().any((d) => !d.isUtc) ||
+        this.updatedAt.isBefore(createdAt)) {
+      throw ArgumentError('Use ordered UTC timestamps.');
+    }
+    if (startedAt != null &&
+        [
+          stoppedAt,
+          pausedAt,
+        ].whereType<DateTime>().any((d) => d.isBefore(startedAt!))) {
+      throw ArgumentError('Stop/pause cannot precede start.');
+    }
   }
   final String id;
   final String name;
   final String strength;
   final DateTime createdAt;
   final bool archived;
+  final String genericName,
+      brand,
+      form,
+      strengthUnit,
+      instructions,
+      reason,
+      prescribedBy,
+      notes;
+  final DateTime updatedAt;
+  final DateTime? startedAt, stoppedAt, pausedAt;
 }
 
 final class Administration {
@@ -33,7 +72,12 @@ final class Administration {
     this.takenAt,
     this.regimenId,
     this.regimenSnapshot,
-  }) {
+    this.medicationSnapshot,
+    DateTime? occurredAt,
+    this.notes = '',
+    this.correctsId,
+    this.correctionReason = '',
+  }) : occurredAt = occurredAt ?? takenAt ?? recordedAt {
     if (id.trim().isEmpty ||
         medicationId.trim().isEmpty ||
         medicationNameSnapshot.trim().isEmpty) {
@@ -47,6 +91,13 @@ final class Administration {
     if ((status == AdministrationStatus.taken) != (takenAt != null)) {
       throw ArgumentError('Only confirmed intake has a taken time.');
     }
+    if (!this.occurredAt.isUtc ||
+        this.occurredAt.isAfter(recordedAt) ||
+        (takenAt != null && takenAt != this.occurredAt) ||
+        (correctsId != null &&
+            (correctsId == id || correctionReason.trim().isEmpty))) {
+      throw ArgumentError('Invalid event time or correction.');
+    }
     if (!recordedAt.isUtc || (takenAt != null && !takenAt!.isUtc)) {
       throw ArgumentError('Use UTC timestamps.');
     }
@@ -59,6 +110,10 @@ final class Administration {
   final DateTime? takenAt;
   final String? regimenId;
   final String? regimenSnapshot;
+  final Medication? medicationSnapshot;
+  final DateTime occurredAt;
+  final String notes, correctionReason;
+  final String? correctsId;
   final double amount;
   final String unit;
 }

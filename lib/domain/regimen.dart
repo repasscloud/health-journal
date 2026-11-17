@@ -105,22 +105,29 @@ final class Regimen {
     required AdministrationStatus status,
     required DateTime recordedAt,
     DateTime? takenAt,
+    DateTime? occurredAt,
+    String notes = '',
+    double? actualAmount,
+    String? actualUnit,
   }) {
     if (medication.id != medicationId) {
       throw ArgumentError('Medication mismatch.');
     }
-    if (!contains(takenAt ?? recordedAt)) {
+    if (!contains(occurredAt ?? takenAt ?? recordedAt)) {
       throw ArgumentError('Regimen is not effective at this time.');
     }
     return Administration(
       id: eventId,
       medicationId: medicationId,
       medicationNameSnapshot: medication.name,
+      medicationSnapshot: medication,
       status: status,
       recordedAt: recordedAt,
       takenAt: takenAt,
-      amount: amount,
-      unit: unit,
+      occurredAt: occurredAt,
+      notes: notes,
+      amount: actualAmount ?? amount,
+      unit: actualUnit ?? unit,
       regimenId: id,
       regimenSnapshot:
           '${kind.name}; $amount $unit; $instructions; '

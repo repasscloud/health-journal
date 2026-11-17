@@ -44,9 +44,9 @@ final class DemoRepository implements JournalRepository {
               for (final e in _administrations)
                 TimelineItem(
                   e.id,
-                  e.takenAt ?? e.recordedAt,
+                  e.occurredAt,
                   'medication',
-                  '${e.medicationNameSnapshot} • ${e.status.name} • ${e.amount} ${e.unit}',
+                  '${e.medicationNameSnapshot} • ${e.status.name} • ${e.amount} ${e.unit}${_administrations.any((c) => c.correctsId == e.id) ? ' • superseded' : ''}${e.correctsId != null ? ' • correction' : ''}',
                 ),
               for (final r in _regimens)
                 TimelineItem(
@@ -84,6 +84,10 @@ final class DemoRepository implements JournalRepository {
   }
 
   final List<Medication> _medications = [];
+  final List<Medication> _medicationHistory = [];
+  @override
+  List<Medication> get medicationHistory =>
+      List.unmodifiable(_medicationHistory);
   final List<Regimen> _regimens = [];
   @override
   List<Regimen> get regimens => List.unmodifiable(_regimens);
@@ -132,6 +136,14 @@ final class DemoRepository implements JournalRepository {
     if (index == -1) {
       _medications.add(medication);
     } else {
+      final previous = _medications[index];
+      if (medication.createdAt != previous.createdAt ||
+          medication.updatedAt.isBefore(previous.updatedAt)) {
+        throw StateError(
+          'Catalogue timestamps must preserve creation and revision order.',
+        );
+      }
+      _medicationHistory.add(previous);
       _medications[index] = medication;
     }
   }
@@ -150,6 +162,22 @@ final class DemoRepository implements JournalRepository {
               r.id == event.regimenId && r.medicationId == event.medicationId,
         )) {
       throw StateError('Regimen does not exist.');
+    }
+    if (event.correctsId != null) {
+      final originals = _administrations.where((e) => e.id == event.correctsId);
+      if (originals.isEmpty ||
+          _administrations.any((e) => e.correctsId == event.correctsId)) {
+        throw StateError('Correction target missing or already corrected.');
+      }
+      final original = originals.single;
+      if (event.medicationId != original.medicationId ||
+          event.medicationNameSnapshot != original.medicationNameSnapshot ||
+          !identical(event.medicationSnapshot, original.medicationSnapshot) ||
+          event.regimenId != original.regimenId ||
+          event.regimenSnapshot != original.regimenSnapshot ||
+          event.recordedAt.isBefore(original.recordedAt)) {
+        throw StateError('Corrections must preserve original snapshots.');
+      }
     }
     _administrations.add(event);
   }

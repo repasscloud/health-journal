@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:uuid/uuid.dart';
 
-import '../domain/medication.dart';
+import '../features/medications/medication_editor.dart';
 import '../features/medications/medication_actions.dart';
 import '../features/records/record_forms.dart';
 import 'environment.dart';
@@ -65,55 +64,11 @@ class _JournalHomeState extends State<JournalHome> {
     'Timeline',
     'More',
   ];
-  Future<void> addMedication() async {
-    final controller = TextEditingController();
-    final form = GlobalKey<FormState>();
-    final name = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add fictional medication'),
-        content: Form(
-          key: form,
-          child: TextFormField(
-            controller: controller,
-            autofocus: true,
-            maxLength: 120,
-            decoration: const InputDecoration(labelText: 'Medication name'),
-            validator: (value) =>
-                value == null || value.trim().isEmpty ? 'Enter a name.' : null,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () {
-              if (form.currentState!.validate()) {
-                Navigator.pop(context, controller.text.trim());
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
-      ),
-    );
-    // Dispose after the dialog's exit transition releases its text field.
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    controller.dispose();
-    if (name == null || !mounted) return;
-    setState(
-      () => widget.environment.repository!.saveMedication(
-        Medication(
-          id: const Uuid().v4(),
-          name: name,
-          strength: '',
-          createdAt: DateTime.now().toUtc(),
-        ),
-      ),
-    );
-  }
+  Future<void> addMedication() => editMedication(
+    context,
+    widget.environment.repository!,
+    () => setState(() {}),
+  );
 
   @override
   Widget build(BuildContext context) {

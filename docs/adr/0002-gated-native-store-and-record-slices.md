@@ -24,8 +24,12 @@ the protected directory policy; physical-device lock/unlock and sidecar attribut
 checks are still required. Complete protection may make storage unavailable while
 locked; future reminder actions must handle this without falsely confirming intake.
 The dedicated store probe passed on the Android emulator, including a second process
-launch with the same secure-storage key. iOS file protection/Keychain runtime and
-physical Android Keystore behaviour remain unverified.
+launch with the same secure-storage key. The iOS 27.0 iPhone 18 Pro simulator debug
+store probe also passed before/after terminate/relaunch in distinct Runner processes
+52855 and 53135 on 2026-11-17. This exercises simulator Keychain reuse and protected
+opener composition only. It does not verify hardware Keychain, effective Data Protection
+attributes, lock/unlock, passcode changes or release execution. Physical Android Keystore
+behaviour and physical iPhone release verification remain unverified.
 
 The v1 Drift schema is exported to `test/fixtures/schema_v1.json`. There are no
 supported upgrades yet. Unsupported version opening is tested against an encrypted
@@ -40,7 +44,9 @@ use exclusive effective end dates and reject overlaps. Revision closes the previ
 range atomically in memory. Explicit administrations snapshot the name, dose and
 regimen context; schedule creation never creates intake. Schedules declare device-
 local wall time and weekdays. DST occurrence generation/notifications are not yet
-implemented. The current form exposes one daily time; the domain accepts multiple.
+implemented. The form exposes multiple daily times sharing selected weekdays; the domain supports
+per-rule weekdays. Effective start dates enable historical entries; revisions take effect
+now. No occurrence generation or notification delivery is implied.
 
 Versioned original schematic SVG polygons use a 100 × 200 viewBox. The same polygon
 geometry performs silhouette hit testing; a test checks every bundled polygon
@@ -54,9 +60,20 @@ anatomical illustrations. PDF rendering remains milestone 3.
 Manual measurement forms use explicit canonical units and manual provenance. No
 conversion/import feature or clinical range interpretation is claimed. Timeline
 search combines regimen changes, explicit administrations, symptoms and measurements.
-These slices are demo-only pending native repository/schema integration. Correction
-history, full catalogue fields, symptom timing/metadata, marker edit/move/radius,
-filtering/pagination and native persistence are still incomplete.
+These slices are demo-only pending native repository/schema integration. Catalogue edits
+retain prior immutable objects with stable IDs and created/updated timestamps. Archival
+retains schedules and history. Administration event time is independent of entry time for
+all statuses. Corrections are append-only links, require a reason, preserve the original
+catalogue/regimen snapshots, and reject missing/already-superseded targets. The current
+view labels superseded entries rather than hiding them; future reports must distinguish
+current facts from correction history to avoid double counting. Actual dose amount/unit
+can differ from the regimen snapshot without rewriting that snapshot. No automated dosing
+advice or deduplication is introduced. The confirmation asks users to check for duplicates.
+
+Catalogue history browsing, original event timezone/offset, intended occurrence linkage,
+symptom timing/metadata, marker edit/move/radius, filtering/pagination and native persistence
+remain incomplete. These domain additions do not alter the gated v1 Drift schema; native
+schema integration will require its own migration/recovery acceptance.
 
 ## Dependency verification
 

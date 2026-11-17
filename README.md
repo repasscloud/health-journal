@@ -94,3 +94,7 @@ store using the installation key and native protected directory. Confirm
 then check for a new PASS from a new process. It intentionally retains fictional
 state to test restart; do not run it over a personal-record installation. A PASS
 is not physical-device file-protection, lock/unlock or portable-backup verification.
+
+On iOS Simulator, use `--debug` for the store probe; simulator PASS/restart proves only
+the simulator path. It cannot replace physical-iPhone release, file-protection or locked-
+device acceptance. Native personal-record entry stays gated regardless of simulator PASS.

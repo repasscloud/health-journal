@@ -32,7 +32,9 @@ A native adapter and testable installation-key lifecycle are composed in the gat
 `NativeStore` opener (see ADR 0002); personal-record bootstrap remains disabled.
 Missing/corrupt keys refuse database replacement. Android Auto Backup is disabled,
 and the native directory is under noBackupFilesDir. iOS complete Data Protection and
-backup exclusion are now configured through a native channel but remain runtime-unverified.
+backup exclusion are configured through a native channel. The protected opener passed
+on the iOS simulator debug path across process restart (ADR 0002); effective attributes
+and physical-device protection remain unverified.
 Android emulator key reuse/restart passed; physical-device key/lock tests remain required.
 Native security files are not imported by the web application composition graph.
 
