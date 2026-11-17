@@ -13,12 +13,12 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get --enforce-lockfile
-      - run: dart format --output=none --set-exit-if-changed lib test tool/native_encryption_probe.dart
+      - run: dart format --output=none --set-exit-if-changed lib test tool/native_encryption_probe.dart tool/native_store_probe.dart
       - run: dart run build_runner build
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release
-      - uses: actions/setup-node@vv7
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
       - run: npm ci --prefix tool/browser

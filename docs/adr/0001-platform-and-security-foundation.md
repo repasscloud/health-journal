@@ -28,10 +28,12 @@ production repository or key lifecycle implementation. An isolated initial Drift
 migration recovery safeguards and repository wiring await successful native proof.
 
 flutter_secure_storage 11.2.0 supports Android (minimum API 23) and iOS Keychain.
-A native adapter and testable installation-key lifecycle are implemented but not wired
-to the app. Missing/corrupt keys refuse database replacement. Android Auto Backup is disabled
-so installation-bound secrets are not presented as portable recovery. iOS Data Protection,
-backup exclusion, key lifecycle and plugin minimum OS settings remain unverified.
+A native adapter and testable installation-key lifecycle are composed in the gated
+`NativeStore` opener (see ADR 0002); personal-record bootstrap remains disabled.
+Missing/corrupt keys refuse database replacement. Android Auto Backup is disabled,
+and the native directory is under noBackupFilesDir. iOS complete Data Protection and
+backup exclusion are now configured through a native channel but remain runtime-unverified.
+Android emulator key reuse/restart passed; physical-device key/lock tests remain required.
 Native security files are not imported by the web application composition graph.
 
 ## Portable crypto candidate

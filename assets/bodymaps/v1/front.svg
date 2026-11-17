@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 200">
+<title>Body front, version 1</title>
+<polygon id="head" points="43,4 57,4 63,12 61,24 55,30 45,30 39,24 37,12" fill="#bed6d2"/>
+<polygon id="torso" points="43,30 57,30 69,40 63,94 60,110 40,110 37,94 31,40" fill="#bed6d2"/>
+<polygon id="viewer_left_arm" points="31,40 38,48 30,76 22,109 14,112 13,104 22,71" fill="#bed6d2"/>
+<polygon id="viewer_right_arm" points="69,40 62,48 70,76 78,109 86,112 87,104 78,71" fill="#bed6d2"/>
+<polygon id="viewer_left_leg" points="40,110 49,110 48,151 44,188 44,196 30,196 33,185 34,151" fill="#bed6d2"/>
+<polygon id="viewer_right_leg" points="51,110 60,110 66,151 67,185 70,196 56,196 56,188 52,151" fill="#bed6d2"/>
+</svg>

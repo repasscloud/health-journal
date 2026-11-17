@@ -85,3 +85,12 @@ server. Notifications will be best effort. PDF/CSV exports will be readable file
 must be shared carefully. The journal provides no medical advice. These later workflows
 are not yet implemented. Publisher IDs, icons, privacy policy and support details must be
 set before release. No signing team or credentials are committed.
+
+Additional fictional native store probe:
+`flutter run --release -d DEVICE_ID -t tool/native_store_probe.dart --no-resident`.
+Use a dedicated test installation: this target creates an encrypted **fictional**
+store using the installation key and native protected directory. Confirm
+`HEALTH_JOURNAL_NATIVE_STORE_PROOF:PASS` in device logs, force-stop and launch again,
+then check for a new PASS from a new process. It intentionally retains fictional
+state to test restart; do not run it over a personal-record installation. A PASS
+is not physical-device file-protection, lock/unlock or portable-backup verification.

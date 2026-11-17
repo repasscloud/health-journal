@@ -31,7 +31,16 @@ final class Administration {
     required this.amount,
     required this.unit,
     this.takenAt,
+    this.regimenId,
+    this.regimenSnapshot,
   }) {
+    if (id.trim().isEmpty ||
+        medicationId.trim().isEmpty ||
+        medicationNameSnapshot.trim().isEmpty) {
+      throw ArgumentError(
+        'An administration needs stable IDs and a medication snapshot.',
+      );
+    }
     if (!amount.isFinite || amount <= 0 || unit.trim().isEmpty) {
       throw ArgumentError('Enter a positive amount and unit.');
     }
@@ -48,6 +57,8 @@ final class Administration {
   final AdministrationStatus status;
   final DateTime recordedAt;
   final DateTime? takenAt;
+  final String? regimenId;
+  final String? regimenSnapshot;
   final double amount;
   final String unit;
 }

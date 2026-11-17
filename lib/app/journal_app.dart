@@ -4,11 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
 import '../domain/medication.dart';
+import '../features/medications/medication_actions.dart';
+import '../features/records/record_forms.dart';
 import 'environment.dart';
+import 'demo_notice.dart';
 
-const demoNotice =
-    'DEMO — All records are fictional. Changes reset when you reload. '
-    'Do not enter real health information.';
+export 'demo_notice.dart' show demoNotice;
 
 class JournalApp extends StatefulWidget {
   const JournalApp({super.key, required this.environment});
@@ -56,6 +57,7 @@ class JournalHome extends StatefulWidget {
 
 class _JournalHomeState extends State<JournalHome> {
   int selected = 0;
+  String search = '';
   static const labels = [
     'Today',
     'Medications',
@@ -159,9 +161,10 @@ class _JournalHomeState extends State<JournalHome> {
                 if (selected == 0 || selected == 1) ...[
                   for (final medication in repository.medications)
                     Card(
-                      child: ListTile(
-                        title: Text(medication.name),
-                        subtitle: const Text('No confirmed administration'),
+                      child: MedicationActions(
+                        medication: medication,
+                        repository: repository,
+                        onChanged: () => setState(() {}),
                       ),
                     ),
                   FilledButton.icon(
@@ -170,13 +173,62 @@ class _JournalHomeState extends State<JournalHome> {
                     label: const Text('Add fictional medication'),
                   ),
                 ],
-                if (selected == 2)
-                  const Text('Symptom entry is scheduled for milestone 1.'),
-                if (selected == 3)
-                  const Text(
-                    'No administration events recorded in this session.',
+                if (selected == 2) ...[
+                  FilledButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => SymptomForm(
+                          onSave: (s) =>
+                              setState(() => repository.addSymptom(s)),
+                        ),
+                      ),
+                    ),
+                    child: const Text('Log fictional symptom'),
                   ),
+                  for (final s in repository.symptoms)
+                    ListTile(
+                      title: Text(s.title),
+                      subtitle: Text(
+                        '${s.notes} • ${s.pain.length} pain observations\n'
+                        '${s.pain.map((p) => '${p.view} ${p.region} ${p.severity}/10').join(', ')}',
+                      ),
+                    ),
+                ],
+                if (selected == 3) ...[
+                  TextField(
+                    decoration: const InputDecoration(
+                      labelText: 'Search timeline',
+                    ),
+                    onChanged: (v) => setState(() => search = v),
+                  ),
+                  if (repository.timeline(search: search).isEmpty)
+                    const Text('No matching events.'),
+                  for (final item in repository.timeline(search: search))
+                    ListTile(
+                      title: Text(item.text),
+                      subtitle: Text('${item.type} • ${item.at.toLocal()}'),
+                    ),
+                ],
                 if (selected == 4) ...[
+                  FilledButton(
+                    onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) => MeasurementForm(
+                          onSave: (m) =>
+                              setState(() => repository.addMeasurement(m)),
+                        ),
+                      ),
+                    ),
+                    child: const Text('Record fictional measurement'),
+                  ),
+                  for (final m in repository.measurements)
+                    ListTile(
+                      title: Text(m.display),
+                      subtitle: Text('manual • ${m.measuredAt.toLocal()}'),
+                    ),
+
                   const ListTile(
                     title: Text('Backup and restore'),
                     subtitle: Text('Unavailable in demo'),

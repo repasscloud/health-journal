@@ -1,4 +1,6 @@
 import '../../domain/medication.dart';
+import '../../domain/regimen.dart';
+import '../../domain/records.dart';
 import '../repositories/journal_repository.dart';
 
 /// One fresh, volatile fixture per boot. No storage or native service imports.
@@ -13,7 +15,111 @@ final class DemoRepository implements JournalRepository {
       ),
     );
   }
+  final List<SymptomEntry> _symptoms = [];
+  final List<Measurement> _measurements = [];
+  @override
+  List<SymptomEntry> get symptoms => List.unmodifiable(_symptoms);
+  @override
+  List<Measurement> get measurements => List.unmodifiable(_measurements);
+  @override
+  void addSymptom(SymptomEntry symptom) {
+    if (_symptoms.any((s) => s.id == symptom.id)) {
+      throw StateError('Duplicate symptom.');
+    }
+    _symptoms.add(symptom);
+  }
+
+  @override
+  void addMeasurement(Measurement measurement) {
+    if (_measurements.any((m) => m.id == measurement.id)) {
+      throw StateError('Duplicate measurement.');
+    }
+    _measurements.add(measurement);
+  }
+
+  @override
+  List<TimelineItem> timeline({String search = ''}) {
+    final items =
+        [
+              for (final e in _administrations)
+                TimelineItem(
+                  e.id,
+                  e.takenAt ?? e.recordedAt,
+                  'medication',
+                  '${e.medicationNameSnapshot} • ${e.status.name} • ${e.amount} ${e.unit}',
+                ),
+              for (final r in _regimens)
+                TimelineItem(
+                  r.id,
+                  r.effectiveFrom,
+                  'schedule',
+                  '${_medications.firstWhere((m) => m.id == r.medicationId).name} • ${r.kind.name} • ${r.amount} ${r.unit} • unconfirmed',
+                ),
+              for (final s in _symptoms)
+                TimelineItem(
+                  s.id,
+                  s.onsetAt,
+                  'symptom',
+                  '${s.title} • ${s.notes} • ${s.pain.map((p) => '${p.view} ${p.region} ${p.severity}/10').join(', ')}',
+                ),
+              for (final m in _measurements)
+                TimelineItem(
+                  m.id,
+                  m.measuredAt,
+                  'measurement',
+                  '${m.display} • manual',
+                ),
+            ]
+            .where(
+              (i) => '${i.type} ${i.text}'.toLowerCase().contains(
+                search.trim().toLowerCase(),
+              ),
+            )
+            .toList();
+    items.sort((a, b) {
+      final order = b.at.compareTo(a.at);
+      return order == 0 ? a.id.compareTo(b.id) : order;
+    });
+    return List.unmodifiable(items);
+  }
+
   final List<Medication> _medications = [];
+  final List<Regimen> _regimens = [];
+  @override
+  List<Regimen> get regimens => List.unmodifiable(_regimens);
+  @override
+  void reviseRegimen(String previousId, Regimen revision) {
+    final index = _regimens.indexWhere((r) => r.id == previousId);
+    if (index < 0) throw StateError('Previous regimen is unavailable.');
+    final previous = _regimens[index];
+    if (previous.medicationId != revision.medicationId ||
+        !previous.contains(revision.effectiveFrom) ||
+        !revision.effectiveFrom.isAfter(previous.effectiveFrom) ||
+        _regimens.any(
+          (r) =>
+              r.id == revision.id ||
+              (r.id != previousId && r.overlaps(revision)),
+        )) {
+      throw StateError('Revision conflicts with effective dates or IDs.');
+    }
+    final closed = previous.endingAt(revision.effectiveFrom);
+    _regimens[index] = closed;
+    _regimens.add(revision);
+  }
+
+  @override
+  void addRegimen(Regimen regimen) {
+    if (!_medications.any((m) => m.id == regimen.medicationId)) {
+      throw StateError('Medication does not exist.');
+    }
+    if (_regimens.any((r) => r.id == regimen.id || r.overlaps(regimen))) {
+      throw StateError(
+        'Regimens must have distinct IDs and non-overlapping effective dates.',
+      );
+    }
+    _regimens.add(regimen);
+  }
+
   final List<Administration> _administrations = [];
   @override
   List<Medication> get medications => List.unmodifiable(_medications);
@@ -37,6 +143,13 @@ final class DemoRepository implements JournalRepository {
     }
     if (_administrations.any((e) => e.id == event.id)) {
       throw StateError('This event is already recorded.');
+    }
+    if (event.regimenId != null &&
+        !_regimens.any(
+          (r) =>
+              r.id == event.regimenId && r.medicationId == event.medicationId,
+        )) {
+      throw StateError('Regimen does not exist.');
     }
     _administrations.add(event);
   }
