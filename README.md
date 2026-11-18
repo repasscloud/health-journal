@@ -114,6 +114,16 @@ With exactly one authorised Android phone connected by USB:
 ./scripts/deploy-android-review.sh
 ```
 
+To list Android Studio virtual devices or refresh a selected emulator:
+
+```sh
+./scripts/refresh-android-emulator.sh
+./scripts/refresh-android-emulator.sh swoovr-pixel
+```
+
+The script starts the named emulator if needed, waits for Android to boot,
+then builds, installs, and opens the review app.
+
 The review and production flavors share the package ID and cannot be installed
 side by side. The deploy script updates an existing installation only when
 Android identifies its review-only activity alias.
