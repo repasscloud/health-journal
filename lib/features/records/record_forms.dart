@@ -4,7 +4,10 @@ import 'package:uuid/uuid.dart';
 
 import '../../domain/body_map.dart';
 import '../../app/demo_notice.dart';
+import '../../app/journal_theme.dart';
+import '../../app/journal_labels.dart';
 import '../../domain/records.dart';
+import '../../domain/measurement_units.dart';
 
 class SymptomForm extends StatefulWidget {
   const SymptomForm({super.key, required this.onSave});
@@ -51,13 +54,19 @@ class _SymptomFormState extends State<SymptomForm> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Log fictional symptom')),
-    body: DemoBody(
+    appBar: AppBar(title: const Text('Log symptom')),
+    body: JournalBody(
       child: Form(
         key: form,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: journalInsets(context, maxWidth: 600),
           children: [
+            const JournalHeading(
+              'Record a symptom',
+              subtitle:
+                  'Describe what you felt. Add locations if they’re relevant.',
+            ),
+            const SizedBox(height: 16),
             TextFormField(
               controller: title,
               decoration: const InputDecoration(labelText: 'Symptom title'),
@@ -65,39 +74,59 @@ class _SymptomFormState extends State<SymptomForm> {
                   ? 'Enter a symptom title.'
                   : null,
             ),
+            const SizedBox(height: 12),
             TextFormField(
+              minLines: 2,
+              maxLines: 4,
               controller: notes,
               decoration: const InputDecoration(labelText: 'Notes'),
             ),
+            const SizedBox(height: 24),
+            Text('Body map', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 4),
             const Text(
-              'Event time: now. Each pain point keeps its own severity and type.',
+              'Tap the silhouette or choose a region below. Each mark has its own severity and type.',
             ),
-            DropdownButtonFormField<String>(
-              isExpanded: true,
-              initialValue: view,
-              decoration: const InputDecoration(labelText: 'Body view'),
-              items: [
-                'front',
-                'back',
-              ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
-              onChanged: (s) => setState(() => view = s!),
+            const SizedBox(height: 12),
+            SegmentedButton<String>(
+              segments: const [
+                ButtonSegment(value: 'front', label: Text('Front')),
+                ButtonSegment(value: 'back', label: Text('Back')),
+              ],
+              selected: {view},
+              onSelectionChanged: (selection) =>
+                  setState(() => view = selection.single),
             ),
+            const SizedBox(height: 12),
             DropdownButtonFormField<String>(
               isExpanded: true,
               initialValue: type,
               decoration: const InputDecoration(labelText: 'Pain type'),
-              items: [
-                'aching',
-                'sharp',
-                'burning',
-                'throbbing',
-                'tingling',
-                'other',
-              ].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+              items:
+                  [
+                        'aching',
+                        'sharp',
+                        'burning',
+                        'throbbing',
+                        'tingling',
+                        'other',
+                      ]
+                      .map(
+                        (s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(journalLabel(s)),
+                        ),
+                      )
+                      .toList(),
               onChanged: (s) => setState(() => type = s!),
             ),
+            const SizedBox(height: 12),
             Text('Severity for next point: $severity / 10'),
             Slider(
+              activeColor: journalSeverityColor(
+                severity,
+                Theme.of(context).brightness,
+              ),
               value: severity.toDouble(),
               min: 0,
               max: 10,
@@ -111,69 +140,93 @@ class _SymptomFormState extends State<SymptomForm> {
                   ? 'Front: anatomical right is on the viewer’s left.'
                   : 'Back: anatomical left is on the viewer’s left.',
             ),
-            Center(
-              child: SizedBox(
-                width: 200,
-                height: 400,
-                child: InteractiveViewer(
-                  minScale: 1,
-                  maxScale: 4,
-                  child: GestureDetector(
-                    onTapUp: (tap) => add(
-                      tap.localPosition.dx / 200,
-                      tap.localPosition.dy / 400,
-                    ),
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        SvgPicture.asset(
-                          'assets/bodymaps/v1/$view.svg',
-                          fit: BoxFit.fill,
-                          semanticsLabel:
-                              '$view body map, version 1. Use the region buttons to select without touch.',
-                        ),
-                        for (final p in pain.where((p) => p.view == view))
-                          Positioned(
-                            left: p.x * 200 - 12,
-                            top: p.y * 400 - 12,
-                            child: Semantics(
-                              label:
-                                  '${p.region}, ${p.severity} out of 10, ${p.painType}',
-                              child: CircleAvatar(
-                                radius: 12,
-                                child: Text('${p.severity}'),
+            Card(
+              child: Center(
+                child: SizedBox(
+                  width: 200,
+                  height: 400,
+                  child: InteractiveViewer(
+                    minScale: 1,
+                    maxScale: 4,
+                    child: GestureDetector(
+                      onTapUp: (tap) => add(
+                        tap.localPosition.dx / 200,
+                        tap.localPosition.dy / 400,
+                      ),
+                      child: Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          SvgPicture.asset(
+                            'assets/bodymaps/v1/$view.svg',
+                            fit: BoxFit.fill,
+                            colorFilter: ColorFilter.mode(
+                              Theme.of(context).colorScheme.outline,
+                              BlendMode.srcIn,
+                            ),
+                            semanticsLabel:
+                                '$view body map, version 1. Use the region buttons to select without touch.',
+                          ),
+                          for (final p in pain.where((p) => p.view == view))
+                            Positioned(
+                              left: p.x * 200 - 12,
+                              top: p.y * 400 - 12,
+                              child: Semantics(
+                                label:
+                                    '${journalLabel(p.region)}, ${p.severity} out of 10, ${journalLabel(p.painType)}',
+                                child: CircleAvatar(
+                                  radius: 12,
+                                  backgroundColor: journalSeverityColor(
+                                    p.severity,
+                                    Theme.of(context).brightness,
+                                  ),
+                                  foregroundColor:
+                                      Theme.of(context).brightness ==
+                                          Brightness.dark
+                                      ? Colors.black
+                                      : Colors.white,
+                                  child: Text('${p.severity}'),
+                                ),
                               ),
                             ),
-                          ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
-            const Text(
-              'Accessible region selection: add a point at a region’s centre',
-            ),
+            const SizedBox(height: 16),
+            const Text('Choose a body region to add a mark'),
             Wrap(
+              spacing: 8,
               children: [
                 for (final r in bodyRegionsV1)
-                  TextButton(
+                  OutlinedButton(
                     onPressed: () => add(r.center.$1, r.center.$2),
-                    child: Text(anatomicalRegion(r, view)),
+                    child: Text(journalLabel(anatomicalRegion(r, view))),
                   ),
               ],
             ),
             for (final p in pain)
               ListTile(
+                leading: Icon(
+                  Icons.circle,
+                  size: 14,
+                  color: journalSeverityColor(
+                    p.severity,
+                    Theme.of(context).brightness,
+                  ),
+                ),
                 title: Text(
-                  '${p.view} ${p.region} • ${p.severity}/10 • ${p.painType}',
+                  '${journalLabel(p.view)} · ${journalLabel(p.region)} · ${p.severity}/10 · ${journalLabel(p.painType)}',
                 ),
                 trailing: IconButton(
-                  tooltip: 'Delete ${p.region} observation',
+                  tooltip: 'Delete ${journalLabel(p.region)} observation',
                   icon: const Icon(Icons.delete_outline),
                   onPressed: () => setState(() => pain.remove(p)),
                 ),
               ),
+            const SizedBox(height: 16),
             if (error != null) Semantics(liveRegion: true, child: Text(error!)),
             FilledButton(
               onPressed: () {
@@ -197,7 +250,7 @@ class _SymptomFormState extends State<SymptomForm> {
                   );
                 }
               },
-              child: const Text('Save fictional symptom'),
+              child: const Text('Save symptom'),
             ),
           ],
         ),
@@ -207,7 +260,12 @@ class _SymptomFormState extends State<SymptomForm> {
 }
 
 class MeasurementForm extends StatefulWidget {
-  const MeasurementForm({super.key, required this.onSave});
+  const MeasurementForm({
+    super.key,
+    this.units = const MeasurementUnits(),
+    required this.onSave,
+  });
+  final MeasurementUnits units;
   final void Function(Measurement) onSave;
   @override
   State<MeasurementForm> createState() => _MeasurementFormState();
@@ -235,19 +293,24 @@ class _MeasurementFormState extends State<MeasurementForm> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    appBar: AppBar(title: const Text('Record fictional measurement')),
-    body: DemoBody(
+    appBar: AppBar(title: const Text('Record measurement')),
+    body: JournalBody(
       child: Form(
         key: form,
         child: ListView(
-          padding: const EdgeInsets.all(16),
+          padding: journalInsets(context, maxWidth: 600),
           children: [
+            const JournalHeading(
+              'Record a measurement',
+              subtitle: 'Enter a reading and its unit.',
+            ),
+            const SizedBox(height: 16),
             DropdownButtonFormField<MeasurementKind>(
               isExpanded: true,
               initialValue: kind,
               decoration: const InputDecoration(labelText: 'Measurement type'),
               items: MeasurementKind.values
-                  .map((k) => DropdownMenuItem(value: k, child: Text(k.name)))
+                  .map((k) => DropdownMenuItem(value: k, child: Text(k.label)))
                   .toList(),
               onChanged: (k) => setState(() {
                 kind = k!;
@@ -255,18 +318,27 @@ class _MeasurementFormState extends State<MeasurementForm> {
                 secondary.clear();
               }),
             ),
+            const SizedBox(height: 12),
             TextFormField(
               controller: value,
-              validator: positive,
+              validator: (input) {
+                final n = double.tryParse(input ?? '');
+                if (n == null || !n.isFinite) return 'Enter a number.';
+                final canonical = widget.units.toCanonical(kind, n);
+                return canonical.isFinite && canonical > 0
+                    ? null
+                    : 'Enter a valid reading in ${widget.units.symbol(kind)}.';
+              },
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
               decoration: InputDecoration(
                 labelText:
-                    '${kind == MeasurementKind.bloodPressure ? 'Systolic' : 'Value'} (${Measurement.units[kind]})',
+                    '${kind == MeasurementKind.bloodPressure ? 'Systolic' : 'Value'} (${widget.units.symbol(kind)})',
               ),
             ),
-            if (kind == MeasurementKind.bloodPressure)
+            if (kind == MeasurementKind.bloodPressure) ...[
+              const SizedBox(height: 12),
               TextFormField(
                 controller: secondary,
                 validator: positive,
@@ -275,9 +347,10 @@ class _MeasurementFormState extends State<MeasurementForm> {
                   labelText: 'Diastolic (mmHg)',
                 ),
               ),
-            const Text(
-              'Source: manual • measured now. Values are recorded without clinical interpretation.',
-            ),
+            ],
+            const SizedBox(height: 12),
+            const Text('This reading will be recorded at the current time.'),
+            const SizedBox(height: 16),
             if (error != null) Semantics(liveRegion: true, child: Text(error!)),
             FilledButton(
               onPressed: () {
@@ -288,7 +361,10 @@ class _MeasurementFormState extends State<MeasurementForm> {
                     Measurement(
                       id: const Uuid().v4(),
                       kind: kind,
-                      value: double.parse(value.text),
+                      value: widget.units.toCanonical(
+                        kind,
+                        double.parse(value.text),
+                      ),
                       secondary: kind == MeasurementKind.bloodPressure
                           ? double.parse(secondary.text)
                           : null,
@@ -304,7 +380,7 @@ class _MeasurementFormState extends State<MeasurementForm> {
                   );
                 }
               },
-              child: const Text('Save fictional measurement'),
+              child: const Text('Save measurement'),
             ),
           ],
         ),

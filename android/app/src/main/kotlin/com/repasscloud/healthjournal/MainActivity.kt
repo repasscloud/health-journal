@@ -1,4 +1,4 @@
-package com.example.healthjournal.health_journal
+package com.repasscloud.healthjournal
 
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
@@ -7,6 +7,9 @@ import java.io.File
 
 class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
+        // Fictional review needs only Flutter and bundled assets. Do not register
+        // storage/key plugins or the protected-directory channel for this flavor.
+        if (BuildConfig.FLAVOR == "review") return
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "health_journal/private_store").setMethodCallHandler { call, result ->

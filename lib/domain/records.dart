@@ -75,7 +75,16 @@ enum MeasurementKind {
   heartRate,
   temperature,
   glucose,
-  sleep,
+  sleep;
+
+  String get label => switch (this) {
+    weight => 'Weight',
+    bloodPressure => 'Blood pressure',
+    heartRate => 'Heart rate',
+    temperature => 'Temperature',
+    glucose => 'Glucose',
+    sleep => 'Sleep',
+  };
 }
 
 final class Measurement {

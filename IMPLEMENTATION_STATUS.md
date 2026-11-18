@@ -5,6 +5,8 @@ Updated 2026-11-17. Product baseline: README, AGENTS and specifications 01–05 
 ## Milestone 0 — In progress
 
 - Generated Flutter stable iOS/Android/web targets and locked dependencies.
+- Applied the HJ monogram to iOS and iPadOS app icons, Android legacy and adaptive
+  launchers (including themed icons), and web demo favicon and PWA icons.
 - Added shared repository contract, immutable medication/administration models and validation.
 - Added injected environment and a volatile fictional demo with five-tab shell, persistent
   demo notice, medication creation with validation and explicit unavailable device features.
@@ -59,6 +61,8 @@ Updated 2026-11-17. Product baseline: README, AGENTS and specifications 01–05 
 
 ## Verification
 
+- Launcher icons: validated PNG dimensions and PWA mask safe areas. iOS asset catalog
+  compilation, Android release resource merges for both flavors, and web release build passed.
 - `flutter analyze`: passed.
 - `flutter test`: 31 tests passed (domain, widgets, installation keys, encryption, schema retention, body geometry and record flows).
 - `flutter build web --release`: passed.
@@ -96,7 +100,7 @@ bootstrap after proof, complete Drift schema and migration recovery safeguards, 
 fictional fixture and broader CI/platform verification. CI is authored but not run remotely.
 1: Catalogue history viewer and broader record editing/audit metadata, original timezone
 capture, intended schedule occurrences/DST, marker editing/movement/radius, richer symptom metadata, timeline
-filters/pagination, measurements display conversions, encrypted native repository/schema.
+filters/pagination, encrypted native repository/schema.
 Existing independent demo slices are described above; native restart acceptance is blocked.
 2: Real notifications, permission/timezone/DST handling, PIN/biometric lock and privacy.
 3: PDF/CSV, OS document providers, benchmarked Argon2id/AES-GCM backup, authenticated
@@ -128,3 +132,226 @@ These remain unfixed in this snapshot and are prioritised with regression-test g
 `NEXT_CONTEXT_PROMPT.md`. The normal Android target still opens the native security gate,
 so a separate, visibly fictional review installation is the recommended next slice.
 Xcode signing settings were not modified.
+
+## Android fictional review implementation — 2026-11-18
+
+This session fixes all three handoff findings: strict calendar validation permits
+completed historical courses with exclusive end after start (revisions require end
+after captured revision time); mixed per-rule weekdays are explicitly refused by
+the shared-weekday revision UI without changing rules; repository writes/corrections
+reject event times outside the referenced regimen's effective range before mutation.
+Regression tests cover invalid/normalised dates, inverted ranges, completed-course
+form retry, mixed weekday refusal and unchanged lists after invalid direct writes.
+
+Added isolated `review` Android flavor/entry point, package
+`com.example.healthjournal.health_journal.fictionalreview`, launcher
+`HJ FICTIONAL REVIEW`. Fresh deterministic fictional memory fixture includes
+fixed/course/PRN regimens, completed course, skipped/taken history and append-only
+correction, a catalogue revision, three front/back pain observations, and six
+measurement kinds. Main production entry point remains nativePending; review
+requires Android plus its compiled review flavor. Web remains unconditional demo.
+Review skips Android native plugin registration and the protected-directory channel.
+No keys, record database, reminders, app lock, reports or backup are opened/enabled.
+Edits last only for the process; backgrounding does not guarantee reset.
+
+Catalogue history viewer added; regimen/status selection shows effective ranges and
+rule weekdays; schedule timeline names retain catalogue-at-regimen-creation names.
+Nested forms use the review reset notice. See ADR 0003 and README build/install steps.
+Administration optional snapshots/object-identity preservation remain volatile-only;
+a stable versioned value snapshot/serialization contract is still required before
+native wiring. Full per-time weekday editing, administration-form retry without
+losing inputs, original timezone, native persistence/migrations, notifications,
+lock, reports and portable backup/restore remain incomplete. No milestone completed.
+
+New checks this session: formatting and analysis passed; 38 unit/widget tests passed;
+Android review release APK and production release APK built; web release built;
+Chrome's two acceptance tests passed (reload/tab isolation/storage and measurement
+entry/search/reset). iOS was not rebuilt or re-probed this session. Xcode signing
+and all iOS files are unchanged; no dependencies, commits or pushes were added.
+Previous simulator/emulator encryption evidence above is prior evidence, not a new
+security claim. Physical-iPhone release/security verification remains blocked by
+the prior provisioning limit and continues to gate personal native records.
+
+No physical Android device was present through adb. An API 35 arm64 emulator was
+started as supplemental evidence; the previously absent review package installed
+without replacement, package/launcher/activity were checked with aapt/dumpsys, and
+the fictional review UI launched successfully. No existing personal-data app was
+cleared, uninstalled or overwritten. Emulator observations do not establish any
+physical-device or production encryption/security acceptance.
+
+Final emulator smoke on the rebuilt review APK: added a fictional 73 kg measurement,
+confirmed it alongside the six seeds, force-stopped process 4044 and relaunched in
+process 4331, then confirmed canonical 72 kg seed remains and added 73 kg is absent.
+No data clear/uninstall was used. Only the review package created in this session was
+updated with the final APK. Review notices were checked in the measurement screen;
+UI XML/screenshots are under ignored `build/review-evidence/`. Emulator clock was
+2026-11-12; host/session date is 2026-11-18. Fixture dates were moved earlier to keep
+edits valid on that emulator clock; one old test now preserves the fixture's actual
+creation timestamp rather than hardcoding it. Tabs have independent list state so
+scrolling Today cannot hide the beginning of More. Final formatting/analysis and all
+38 tests passed after these changes; final web release and both Chrome tests passed.
+
+Final review artifact: `build/app/outputs/flutter-apk/app-review-release.apk`
+(61.2 MB, local development signing). SHA-256:
+`f9e3437fb8cea7b495fd31aee92273e704cc28011f469ce17ea63d5bf3835622`.
+APK metadata confirms the separate package/name/activity and minSdk 24, targetSdk 36.
+Production APK was built earlier in this session after flavor/channel changes;
+subsequent UI/fixture changes are validated by the final review/web builds and tests.
+
+## 2026-11-18 — UI redesign
+
+Redesigned the implemented Flutter screens using the references in
+`docs/design/example-pack-20261118`. A shared light/dark Material 3 theme
+covers the journal, record forms and the gated native setup screen. Today
+prioritises recorded activity and gives direct access to dose, symptom and
+measurement entry. The medication catalogue is searchable, with separate
+detail pages for regimens, catalogue history and dose corrections. The timeline
+has event-type filters, date groups and contextual times. Symptom entry uses
+segmented front/back controls and retains accessible region selection.
+
+Dose status is still explicitly chosen. The confirmation form uses the current
+time for a new record and the original time for a correction, both editable.
+Inline validation keeps values intact when a correction reason, dose or time
+needs adjustment. An as-needed regimen supports recording without scheduled
+times. Samples now populate the web demo as well as the isolated Android review.
+The web demo still seeds a fresh volatile repository on each page load.
+
+The design pack also includes future workflows. Catalogue import, symptom
+follow-ups and trends, drawn body areas, reports, reminders, app lock and
+portable recovery remain outside this UI pass. The app continues to show
+device-feature availability and gate native personal record entry.
+
+Validation: `flutter analyze` and all 38 unit/widget tests passed. Web release
+and Android fictional-review release APK built successfully. Both Chrome
+acceptance tests passed twice, covering tab isolation, browser storage and
+reload reset. Visually checked desktop, 390 px mobile, dark mode and symptom
+entry in Chrome. The Android APK is available for device review. This UI pass
+did not run an iOS build or repeat the native encryption probes.
+
+### Monochrome appearance and build labels
+
+Adopted WanderConnect's Standard light/dark palette and added a session-only
+System, Light and Dark control under More > Appearance. The web demo still
+shows the sample-data and reload notice. The Android review launcher is
+Health Journal Review and the review notice explains process-reset behaviour.
+Shared screens use regular journal labels. The review app keeps its isolated
+package ID, and the production storage gate remains in effect.
+
+Flutter analysis, all 39 unit/widget tests and both Chrome acceptance tests
+passed. Chrome visual checks covered monochrome light, dark and the body map.
+
+### Medication and pain-map form refinements
+
+Pain type and body-region controls display capitalised labels while retaining
+their stored identifiers. The severity slider and numbered body-map markers
+use green for 0–5, orange for 6–8 and red for 9–10, with light/dark variants.
+Medication form and strength unit use the brief's dropdown options. New
+product strengths accept positive decimals and preserve the entered precision.
+Existing free-text values remain available when editing earlier records.
+These changes keep the current schema and do not add dose calculations.
+
+Static analysis and all 39 unit/widget tests passed, including severity band
+boundaries, numeric validation, and the medication field round-trip.
+The web release built and both Chrome acceptance tests passed. The Android
+review release installed and cold-launched successfully on the USB-connected
+Samsung SM-A146P.
+
+### Calendar controls and strength unit labels
+
+Medication start, stop and pause dates and regimen start and end dates use
+calendar-only controls. Optional medication dates can be cleared. Recorded
+dose dates also use calendar-only mode. Regimen end dates remain exclusive and
+must follow the effective start. Strength unit options show the symbol and
+full name and continue to save the symbol.
+Static analysis, 39 Flutter tests and both Chrome acceptance tests passed.
+The updated Android review build installed and launched on the Samsung phone.
+
+### Regimen form spacing
+
+Added 12 logical pixels between fields in Add and Revise regimen, plus gaps
+between weekday choices. The form remains scrollable for longer schedules.
+Static analysis, 39 Flutter tests and both Chrome acceptance tests passed.
+The updated Android review build installed and launched on the Samsung phone.
+
+### Readability and dose correction flow
+
+Reviewed the implemented screens and shared controls. Dose status and
+regimen labels are human-readable throughout the relevant flows. Medication
+details now separate regimen, dose history and catalogue history. Each dose
+shows its status, amount and event time first. Expandable entry details
+retain the original medication snapshot, entry time and correction reason.
+Timeline cards use separate lines, readable body-region names and severity
+colours alongside numeric values. Shared controls have clearer borders,
+larger action targets and more generous body text.
+
+Flutter analysis, 39 Flutter tests and both Chrome acceptance tests passed.
+The Flutter suite includes 200% text at phone width and the correction
+dialog. The updated Android review build installed and launched on the
+Samsung phone. Chrome visual checks covered phone and desktop widths.
+
+### Ad-hoc medication intake
+
+Today > Record medication and the medication detail page open an intake
+form without requiring a regimen. The event date and time default to when
+the form opens and remain editable. The dose is recorded as taken only
+after Save dose. The recording form reuses a current regimen's amount and
+unit, or uses an unambiguous countable product form for the unit and asks
+for the amount. Product strength remains separate. Dose units can be
+changed and are requested when no usable default exists. Corrections
+still preserve the original event snapshots.
+
+This slice uses the existing nullable regimen reference in the shared
+domain and the in-memory review and web repositories. The gated native
+database still requires a regimen reference and must be migrated and
+validated before supporting this flow with personal records.
+Static analysis, 40 Flutter tests, both Chrome acceptance tests and a
+phone-width Chrome ad-hoc intake smoke test passed. The updated Android
+review build installed and launched on the Samsung phone.
+
+### Android launcher identity
+
+The Android launcher name is **Health Journal** and the application ID and
+Kotlin namespace are `com.repasscloud.healthjournal`. The review APK was
+installed and cold-launched on the Samsung. The legacy review package was
+disabled for Android user 0, leaving its installation intact. Review and
+production now share an application ID. The deploy script checks the
+review-only activity alias before replacing an installed build. Static
+analysis and all 40 Flutter tests passed.
+Both Android release flavors built. APK inspection confirmed the requested
+label and ID on both, with the review activity alias absent from production.
+
+### Regimen units, directions and prescribers
+
+New regimens derive the read-only dose unit from the medication's form and
+display the appropriate singular or plural for countable forms. New regimens
+require a recognised form. Revisions keep the saved unit to preserve the
+meaning of their existing quantities. New regimen directions start with the
+medication's saved directions. Medication details show the current
+directions and prescriber. Both editors have multiline Directions fields.
+Prescribed by suggests names from saved current and historical medications
+and accepts new names. Suggestions use the current repository's data.
+Flutter analysis, all 41 Flutter tests and both Chrome acceptance tests
+passed. The updated Android review build installed and launched on the
+Samsung phone.
+
+## Settings and startup (2026-11-18)
+
+- The top-right cog opens Settings. Independent weight, temperature and glucose
+  units appear above system/light/dark appearance and device capability information.
+  Measurement entry is on Today and readings appear in Timeline. The selected
+  units apply to new entries and existing readings using canonical storage.
+- Preferences are session-scoped in the current builds. A new demo page load
+  restores the defaults and creates a fresh fictional repository.
+- Cold startup traces the HJ launcher monogram, holds it, and fades the
+  assembled logo to the theme background before showing the journal. The
+  4.7-second sequence follows system appearance on first launch. Reduced
+  motion skips the animation.
+  If the native composition supplies an unlock check, the unlock screen replaces
+  the animation and gates the journal until authentication succeeds. Native PIN
+  and biometric enrolment and verification are still pending.
+- Verified with Flutter analysis and 46 Flutter tests, including Settings,
+  canonical weight conversion, stroke drawing and fading in both themes,
+  reduced-motion startup, and the unlock gate.
+- The web release build, both Chrome acceptance tests, the Android review
+  release APK, and the unsigned iOS release build passed. Native physical-device
+  runtime verification remains pending.

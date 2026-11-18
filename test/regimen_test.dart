@@ -134,10 +134,11 @@ void main() {
         id: medication.id,
         name: 'Changed fictional name',
         strength: '',
-        createdAt: start,
+        createdAt: medication.createdAt,
+        updatedAt: start,
       ),
     );
-    expect(event.medicationNameSnapshot, 'Fictional sample medication');
+    expect(event.medicationNameSnapshot, medication.name);
     expect(event.regimenSnapshot, contains('prn; 1.0 tablet'));
     expect(event.takenAt, isNull);
     expect(() => repository.recordAdministration(event), throwsStateError);

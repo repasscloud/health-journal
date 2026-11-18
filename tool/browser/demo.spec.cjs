@@ -2,18 +2,20 @@ const { test, expect } = require('@playwright/test');
 async function boot(page) {
   await page.goto('/');
   await page.locator('flt-semantics-placeholder').evaluate(e => e.click());
-  await expect(page.getByText('DEMO — All records', { exact: false })).toBeVisible();
+  await page.getByText('DEMO — All records', { exact: false }).waitFor({ timeout: 10000 });
 }
 test('reload, independent tabs and browser storage', async ({ page, context }) => {
   await boot(page);
-  await page.getByRole('button', { name: 'Add fictional medication' }).click();
+  await page.getByRole('tab', { name: 'Medications', exact: true }).click();
+  await page.getByRole('button', { name: 'Add medication' }).click();
   const name = page.getByRole('textbox', { name: 'Medication name', exact: true });
   await name.click();
   await expect(name).toBeFocused();
-  await name.pressSequentially('Fictional browser edit', { delay: 100 });
+  await name.press('ControlOrMeta+A', { delay: 100 });
+  await page.keyboard.insertText('Fictional browser edit');
   await expect(name).toHaveValue('Fictional browser edit');
   await page.getByRole('button', { name: 'Add', exact: true }).click();
-  await expect(page.getByRole('group', { name: /Fictional browser edit/ })).toBeVisible();
+  await expect(page.getByText('Fictional browser edit', { exact: true })).toBeVisible();
   const storage = await page.evaluate(async () => ({
     local: { ...localStorage }, session: { ...sessionStorage },
     databases: await indexedDB.databases(),
@@ -29,16 +31,17 @@ test('reload, independent tabs and browser storage', async ({ page, context }) =
   expect(storage.opfs).toEqual([]);
   const second = await context.newPage();
   await boot(second);
-  await expect(second.getByRole('group', { name: /Fictional browser edit/ })).toHaveCount(0);
+  await second.getByRole('tab', { name: 'Medications', exact: true }).click();
+  await expect(second.getByText('Fictional browser edit', { exact: true })).toHaveCount(0);
   await page.reload();
   await page.locator('flt-semantics-placeholder').evaluate(e => e.click());
-  await expect(page.getByText('DEMO — All records', { exact: false })).toBeVisible();
-  await expect(page.getByRole('group', { name: /Fictional browser edit/ })).toHaveCount(0);
+  await page.getByText('DEMO — All records', { exact: false }).waitFor({ timeout: 10000 });
+  await page.getByRole('tab', { name: 'Medications', exact: true }).click();
+  await expect(page.getByText('Fictional browser edit', { exact: true })).toHaveCount(0);
 });
-test('manual measurement remains fictional and resets on reload', async ({ page }) => {
+test('manual measurement remains and resets on reload', async ({ page }) => {
   await boot(page);
-  await page.getByRole('tab', { name: 'More', exact: true }).click();
-  await page.getByRole('button', { name: 'Record fictional measurement' }).click();
+  await page.getByRole('button', { name: 'Record measurement' }).click();
   await expect(page.getByText('DEMO — All records', { exact: false })).toBeVisible();
   await page.getByRole('textbox', { name: /Value/ }).click();
   const value = page.getByRole('textbox', { name: /Value/ });
@@ -46,16 +49,17 @@ test('manual measurement remains fictional and resets on reload', async ({ page 
   await value.press('ControlOrMeta+A', { delay: 100 });
   await value.pressSequentially('72.25', { delay: 100 });
   await expect(value).toHaveValue('72.25');
-  await page.getByRole('button', { name: 'Save fictional measurement' }).click();
+  await page.getByRole('button', { name: 'Save measurement' }).click();
   await page.getByRole('tab', { name: 'Timeline', exact: true }).click();
   await page.getByRole('textbox', { name: 'Search timeline' }).click();
   await expect(page.getByRole('textbox', { name: 'Search timeline' })).toBeFocused();
   await page.getByRole('textbox', { name: 'Search timeline' }).press('ControlOrMeta+A', { delay: 100 });
   await page.getByRole('textbox', { name: 'Search timeline' }).pressSequentially('72.25', { delay: 100 });
-  await expect(page.getByText(/weight: 72.25 kg/)).toBeVisible();
+  await expect(page.getByText(/Weight · 72.25 kg/)).toBeVisible();
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('72.25');
   await page.reload();
   await page.locator('flt-semantics-placeholder').evaluate(e => e.click());
+  await page.getByText('DEMO — All records', { exact: false }).waitFor({ timeout: 10000 });
   await page.getByRole('tab', { name: 'Timeline', exact: true }).click();
   await page.getByRole('textbox', { name: 'Search timeline' }).click();
   await expect(page.getByRole('textbox', { name: 'Search timeline' })).toBeFocused();

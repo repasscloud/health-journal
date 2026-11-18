@@ -2,7 +2,7 @@
 
 **Status:** Approved product baseline / implementation handoff  
 **Date:** 2026-11-17  
-**Working name:** Health Journal (replace branding, identifiers and icons before release)  
+**Working name:** Health Journal (confirm branding and identifiers before release)
 **Owner decision:** Free forever, no ads, no subscriptions, no account, no backend, **one profile only**.
 
 ## Read order for Claude / Codex
@@ -65,7 +65,7 @@ dart run build_runner build
 flutter analyze
 flutter test
 flutter build web --release
-flutter build apk --release
+flutter build apk --release --flavor production
 flutter build ios --release --no-codesign
 ```
 
@@ -83,7 +83,7 @@ Production design: local-only, one person, no accounts or backend. Portable reco
 require the backup file and its password; a forgotten password cannot be recovered by a
 server. Notifications will be best effort. PDF/CSV exports will be readable files and
 must be shared carefully. The journal provides no medical advice. These later workflows
-are not yet implemented. Publisher IDs, icons, privacy policy and support details must be
+are not yet implemented. Publisher IDs, privacy policy and support details must be
 set before release. No signing team or credentials are committed.
 
 Additional fictional native store probe:
@@ -98,3 +98,31 @@ is not physical-device file-protection, lock/unlock or portable-backup verificat
 On iOS Simulator, use `--debug` for the store probe; simulator PASS/restart proves only
 the simulator path. It cannot replace physical-iPhone release, file-protection or locked-
 device acceptance. Native personal-record entry stays gated regardless of simulator PASS.
+
+## Android fictional device review
+
+Build: `flutter build apk --release --flavor review -t lib/main_review.dart`.
+APK: `build/app/outputs/flutter-apk/app-review-release.apk`.
+Package: `com.repasscloud.healthjournal`.
+Launcher: **Health Journal**. The review build holds sample edits in memory.
+Force-stop and relaunch to restore the sample data. Do not enter real health
+information.
+
+With exactly one authorised Android phone connected by USB:
+
+```sh
+./scripts/deploy-android-review.sh
+```
+
+The review and production flavors share the package ID and cannot be installed
+side by side. The deploy script updates an existing installation only when
+Android identifies its review-only activity alias.
+
+Review medications/catalogue history, completed courses, explicit status/corrections,
+symptom front/back region entry, measurements and timeline search (`correction`,
+`ache`, `weight`). Scheduled entries remain unconfirmed. Device storage/keys,
+notifications, lock, reports, backup/restore and health import are unavailable.
+Production remains gated pending physical-iPhone release/security verification.
+For Android production builds and the dedicated fictional security probes, append
+`--flavor production`; do not run probes over any personal-data installation.
+See ADR 0003 for composition boundaries and known snapshot-contract limitations.

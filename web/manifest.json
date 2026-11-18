@@ -1,11 +1,11 @@
 {
-  "name": "Health Journal \u2014 Fictional Demo",
+  "name": "Health Journal \u2014 Demo",
   "short_name": "Journal Demo",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#00695c",
-  "description": "Fictional health journal demonstration. Changes reset on reload.",
+  "theme_color": "#0a0a0a",
+  "description": "Sample health journal demonstration. Changes reset on reload.",
   "prefer_related_applications": false,
   "icons": [
     {

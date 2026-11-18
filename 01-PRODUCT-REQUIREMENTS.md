@@ -16,7 +16,7 @@ Welcome → `Start Fresh` OR `Restore Existing Backup`.
 
 ### Navigation
 
-Bottom navigation for phone: `Today`, `Medications`, `Symptoms`, `Timeline`, `More`. Tablet responsive/navigation rail optional. Reports, Trends, Measurements, Settings, Backup/Restore accessible from More and contextually. Use Material 3, consistent spacing/typography, meaningful empty/loading/error states, touch targets, dynamic type and screen-reader semantics.
+Bottom navigation for phone: `Today`, `Medications`, `Symptoms`, `Timeline`. Tablet responsive/navigation rail optional. The top-right cog opens Settings for units, appearance, and device features. Record measurements from Today and review them in Timeline. Reports, Trends, and Backup/Restore are accessible contextually as those features become available. Use Material 3, consistent spacing/typography, meaningful empty/loading/error states, touch targets, dynamic type and screen-reader semantics.
 
 ## 2. Today dashboard
 
@@ -66,8 +66,8 @@ Report builder: 7/30/90 days, all-time, custom range; selectable sections: optio
 
 ## 8. Settings
 
+- Units: independent choices for weight (kg/lb), temperature (°C/°F), and glucose (mmol/L or mg/dL). Blood pressure remains in mmHg.
 - Appearance: system/light/dark.
-- Measurement units: metric/imperial; separate glucose display unit where supported.
 - Clock/date: device locale, optional 12/24-hour.
 - Medication reminders globally and per schedule; snooze preference; hide sensitive notification content.
 - Security: change app PIN, enable/disable PIN (with reauthentication), biometrics where available (Face ID/Touch ID/Android biometric), lock on background, inactivity auto-lock, fallback behaviour.
