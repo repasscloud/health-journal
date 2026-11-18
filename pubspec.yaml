@@ -69,6 +69,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/bodymaps/v1/
+    - web/icons/Icon-192.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:

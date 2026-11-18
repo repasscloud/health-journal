@@ -9,9 +9,12 @@
         android:translateX="3.27"
         android:translateY="5.36">
         <path
-            android:pathData="M72,69V155 M72,112H131 M131,69V151 C131,174 146,187 165,187 C184,187 195,173 195,151 V69"
+            android:pathData="M72,69V155 M72,112H131 M131,69V151 C131,174 146,187 165,187 C184,187 195,173 195,151 V102"
             android:strokeColor="#E6F3DA"
             android:strokeLineCap="round"
             android:strokeWidth="20" />
+        <path
+            android:fillColor="#E6F3DA"
+            android:pathData="M185,69 a10,10 0,1 0,20 0 a10,10 0,1 0,-20 0 Z" />
     </group>
 </vector>

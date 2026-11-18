@@ -12,6 +12,29 @@ import 'package:health_journal/domain/measurement_units.dart';
 import 'package:health_journal/app/demo_notice.dart';
 
 void main() {
+  testWidgets('browser demo keeps home and settings in a phone-width column', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(1440, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      JournalApp(environment: AppEnvironment.demo(), usePhonePreview: true),
+    );
+    await tester.pumpAndSettle();
+    final appBar = find.byType(AppBar);
+    expect(tester.getRect(appBar), const Rect.fromLTWH(480, 0, 480, 56));
+
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(appBar), const Rect.fromLTWH(480, 0, 480, 56));
+    expect(find.text(demoNotice), findsOneWidget);
+
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    await tester.pumpAndSettle();
+    expect(tester.getRect(appBar), const Rect.fromLTWH(0, 0, 390, 56));
+  });
+
   testWidgets('demo can edit and a new boot restores the seed', (tester) async {
     await tester.pumpWidget(
       JournalApp(environment: AppEnvironment.demo(richFixture: false)),
@@ -654,9 +677,11 @@ void main() {
     );
   });
 
-  for (final (brightness, background, ink) in [
-    (Brightness.light, const Color(0xfffafafa), const Color(0xff0a0a0a)),
-    (Brightness.dark, const Color(0xff0a0a0a), const Color(0xfff5f5f5)),
+  const tile = Color(0xff182420);
+  const ink = Color(0xffe6f3da);
+  for (final (brightness, background) in [
+    (Brightness.light, const Color(0xfffafafa)),
+    (Brightness.dark, const Color(0xff0a0a0a)),
   ]) {
     testWidgets(
       'startup draws then fades the logo in ${brightness.name} mode',
@@ -677,7 +702,13 @@ void main() {
 
         await tester.pump(const Duration(milliseconds: 1900));
         expect(logo, paintsExactlyCountTimes(#drawPath, 3));
-        expect(logo, paints..path(color: ink));
+        expect(
+          logo,
+          paints
+            ..rrect(color: tile)
+            ..path(color: ink)
+            ..circle(x: 195, y: 69, radius: 10, color: ink),
+        );
 
         await tester.pump(const Duration(milliseconds: 900));
         expect(

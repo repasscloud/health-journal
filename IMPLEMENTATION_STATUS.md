@@ -1,16 +1,18 @@
 # Implementation status
 
-Updated 2026-11-17. Product baseline: README, AGENTS and specifications 01–05 read.
+Updated 2026-11-18. Product baseline: README, AGENTS and specifications 01–05 read.
 
 ## Milestone 0 — In progress
 
 - Generated Flutter stable iOS/Android/web targets and locked dependencies.
-- Applied the HJ monogram to iOS and iPadOS app icons, Android legacy and adaptive
-  launchers (including themed icons), and web demo favicon and PWA icons.
+- Applied the Hj monogram to iOS and iPadOS app icons, Android legacy and adaptive
+  launchers (including themed icons), and web demo favicon, PWA icons and header.
 - Added shared repository contract, immutable medication/administration models and validation.
 - Added injected environment and a volatile fictional demo with five-tab shell, persistent
   demo notice, medication creation with validation and explicit unavailable device features.
 - Web startup always creates a new repository. No journal browser storage APIs are used.
+- The browser demo centres all screens in a 480 logical pixel column on wider
+  displays and fills narrower viewports.
 - Native boot fails closed: personal data entry is unavailable pending encryption proof.
 - Added SQLite3MultipleCiphers release-enforced cipher check and encryption probe tests.
 - Initial isolated Drift schema/migration includes singleton profile, medications/regimens/events,
@@ -342,15 +344,15 @@ Samsung phone.
   units apply to new entries and existing readings using canonical storage.
 - Preferences are session-scoped in the current builds. A new demo page load
   restores the defaults and creates a fresh fictional repository.
-- Cold startup traces the HJ launcher monogram, holds it, and fades the
-  assembled logo to the theme background before showing the journal. The
-  4.7-second sequence follows system appearance on first launch. Reduced
-  motion skips the animation.
+- Cold startup traces the Hj launcher monogram, holds it, and fades the
+  cream mark and green tile together into the theme background before showing
+  the journal. The 4.7-second sequence follows system appearance on first launch.
+  Reduced motion skips the animation.
   If the native composition supplies an unlock check, the unlock screen replaces
   the animation and gates the journal until authentication succeeds. Native PIN
   and biometric enrolment and verification are still pending.
-- Verified with Flutter analysis and 46 Flutter tests, including Settings,
-  canonical weight conversion, stroke drawing and fading in both themes,
+- Verified with Flutter analysis and 47 Flutter tests, including Settings,
+  canonical weight conversion, logo colours, the lowercase j dot, and fading in both themes,
   reduced-motion startup, and the unlock gate.
 - The web release build, both Chrome acceptance tests, the Android review
   release APK, and the unsigned iOS release build passed. Native physical-device

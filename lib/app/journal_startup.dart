@@ -84,10 +84,7 @@ class _JournalStartupState extends State<JournalStartup>
               child: CustomPaint(
                 key: const ValueKey('startup-logo'),
                 size: const Size.square(152),
-                painter: _StartupMonogram(
-                  _animation,
-                  theme.colorScheme.primary,
-                ),
+                painter: _StartupMonogram(_animation),
               ),
             ),
           ),
@@ -125,10 +122,11 @@ class _JournalStartupState extends State<JournalStartup>
 }
 
 class _StartupMonogram extends CustomPainter {
-  _StartupMonogram(this.animation, this.color) : super(repaint: animation);
+  _StartupMonogram(this.animation) : super(repaint: animation);
 
   final Animation<double> animation;
-  final Color color;
+  static const _tile = Color(0xff182420);
+  static const _ink = Color(0xffe6f3da);
 
   // The same centerlines and round caps as the Android launcher foreground.
   static final _strokes =
@@ -141,24 +139,26 @@ class _StartupMonogram extends CustomPainter {
             ..lineTo(131, 151)
             ..cubicTo(131, 174, 146, 187, 165, 187)
             ..cubicTo(184, 187, 195, 173, 195, 151)
-            ..lineTo(195, 69))
+            ..lineTo(195, 102))
           .computeMetrics()
           .toList();
   static final _length = _strokes.fold(
     0.0,
     (total, stroke) => total + stroke.length,
   );
+  static const _dotRadius = 10.0;
   static const _draw = Interval(.05, .59, curve: Curves.easeInOutCubic);
   static const _fade = Interval(.73, .93, curve: Curves.easeInOut);
 
   @override
   void paint(Canvas canvas, Size size) {
     final opacity = 1 - _fade.transform(animation.value);
-    var remaining = _length * _draw.transform(animation.value);
+    var remaining =
+        (_length + _dotRadius * 2) * _draw.transform(animation.value);
     if (opacity == 0 || remaining == 0) return;
 
     final ink = Paint()
-      ..color = color
+      ..color = _ink
       ..style = PaintingStyle.stroke
       ..strokeWidth = 20
       ..strokeCap = StrokeCap.round
@@ -173,9 +173,16 @@ class _StartupMonogram extends CustomPainter {
     } else {
       canvas.save();
     }
-    canvas.translate(size.width / 2, size.height / 2);
-    canvas.scale(math.min(size.width, size.height) / 152);
-    canvas.translate(-133.5, -128);
+    final side = math.min(size.width, size.height);
+    canvas.translate((size.width - side) / 2, (size.height - side) / 2);
+    canvas.scale(side / 256);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        const Rect.fromLTWH(0, 0, 256, 256),
+        const Radius.circular(56),
+      ),
+      Paint()..color = _tile,
+    );
     for (final stroke in _strokes) {
       if (remaining <= 0) break;
       canvas.drawPath(
@@ -184,10 +191,17 @@ class _StartupMonogram extends CustomPainter {
       );
       remaining -= stroke.length;
     }
+    if (remaining > 0) {
+      canvas.drawCircle(
+        const Offset(195, 69),
+        math.min(_dotRadius, remaining / 2),
+        Paint()..color = _ink,
+      );
+    }
     canvas.restore();
   }
 
   @override
   bool shouldRepaint(_StartupMonogram oldDelegate) =>
-      color != oldDelegate.color || animation != oldDelegate.animation;
+      animation != oldDelegate.animation;
 }

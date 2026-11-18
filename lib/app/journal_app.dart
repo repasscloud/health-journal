@@ -23,9 +23,11 @@ class JournalApp extends StatefulWidget {
     super.key,
     required this.environment,
     this.unlockOnStartup,
+    this.usePhonePreview = false,
   });
   final AppEnvironment environment;
   final Future<bool> Function()? unlockOnStartup;
+  final bool usePhonePreview;
   @override
   State<JournalApp> createState() => _JournalAppState();
 }
@@ -63,8 +65,34 @@ class _JournalAppState extends State<JournalApp> {
       valueListenable: _themeMode,
       builder: (context, mode, _) => MaterialApp.router(
         title: 'Health Journal',
-        builder: (context, child) =>
-            BuildNotice(review: widget.environment.isReview, child: child!),
+        builder: (context, child) {
+          final journal = BuildNotice(
+            review: widget.environment.isReview,
+            child: child!,
+          );
+          if (!widget.usePhonePreview) {
+            return journal;
+          }
+          return ColoredBox(
+            color: Theme.of(context).colorScheme.surfaceContainerLow,
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 480),
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final media = MediaQuery.of(context);
+                    return MediaQuery(
+                      data: media.copyWith(
+                        size: Size(constraints.maxWidth, media.size.height),
+                      ),
+                      child: journal,
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        },
         routerConfig: router,
         debugShowCheckedModeBanner: false,
         themeMode: mode,
@@ -244,7 +272,15 @@ class _JournalHomeState extends State<JournalHome> {
         titleSpacing: journalInsets(context, maxWidth: 1016).left,
         title: Row(
           children: [
-            const JournalIcon(Icons.menu_book_outlined),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.asset(
+                'web/icons/Icon-192.png',
+                width: 40,
+                height: 40,
+                excludeFromSemantics: true,
+              ),
+            ),
             const SizedBox(width: 12),
             Flexible(
               child: Text(
