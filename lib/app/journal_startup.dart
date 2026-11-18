@@ -125,8 +125,8 @@ class _StartupMonogram extends CustomPainter {
   _StartupMonogram(this.animation) : super(repaint: animation);
 
   final Animation<double> animation;
-  static const _tile = Color(0xff182420);
-  static const _ink = Color(0xffe6f3da);
+  static const _tile = Color(0xff0a0a0a);
+  static const _ink = Color(0xfff5f5f5);
 
   // The same centerlines and round caps as the Android launcher foreground.
   static final _strokes =

@@ -12,8 +12,7 @@ final class PainObservation {
   }) {
     if (id.isEmpty ||
         !['front', 'back'].contains(view) ||
-        assetVersion != 'v1' ||
-        bodyRegionAt(x, y) == null ||
+        bodyRegionAt(x, y, version: assetVersion, view: view) == null ||
         severity < 0 ||
         severity > 10 ||
         ![
@@ -32,7 +31,10 @@ final class PainObservation {
   final String id, view, painType, assetVersion;
   final double x, y;
   final int severity;
-  String get region => anatomicalRegion(bodyRegionAt(x, y)!, view);
+  String get region => anatomicalRegion(
+    bodyRegionAt(x, y, version: assetVersion, view: view)!,
+    view,
+  );
   String get laterality => region.startsWith('left')
       ? 'left'
       : region.startsWith('right')

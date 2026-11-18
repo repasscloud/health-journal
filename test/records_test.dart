@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:health_journal/domain/body_map.dart';
+import 'package:health_journal/domain/body_map_v2.dart';
 import 'package:health_journal/domain/records.dart';
 import 'package:health_journal/data/demo/demo_repository.dart';
 
@@ -22,6 +23,40 @@ void main() {
     expect(bodyRegionAt(.5, .9), isNull); // gap between legs
     expect(bodyRegionAt(double.nan, .5), isNull);
     expect(bodyRegionAt(1.1, .5), isNull);
+  });
+  test('v2 hit testing matches the SVG outlines and region anchors', () {
+    String normalize(String path) =>
+        path.trim().replaceAll(RegExp(r'\s+'), ' ');
+    for (final view in ['front', 'back']) {
+      final svg = File('assets/bodymaps/v2/$view.svg').readAsStringSync();
+      final svgPath = RegExp(r'id="silhouette"[^>]+ d="([^"]+)"')
+          .firstMatch(svg)!
+          .group(1)!;
+      expect(normalize(bodySilhouetteV2(view)), normalize(svgPath));
+      for (final region in bodyRegionsV2) {
+        final (x, y) = region.center;
+        expect(bodyRegionAt(x, y, version: 'v2', view: view), region);
+      }
+      expect(bodyRegionAt(.5, .9, version: 'v2', view: view), isNull);
+      expect(bodyRegionAt(.3, .42, version: 'v2', view: view), isNull);
+      final hand = PainObservation(
+        id: 'hand',
+        view: view,
+        x: .15,
+        y: .575,
+        severity: 2,
+        assetVersion: 'v2',
+      );
+      expect(hand.region, view == 'front' ? 'right_arm' : 'left_arm');
+      expect(bodyRegionAt(hand.x, hand.y), isNull);
+    }
+
+    // The toe extends beyond the heel in the front view.
+    expect(
+      bodyRegionAt(.69, .972, version: 'v2', view: 'front')?.code,
+      'viewer_right_leg',
+    );
+    expect(bodyRegionAt(.69, .972, version: 'v2', view: 'back'), isNull);
   });
   test('front/back laterality is anatomical and coordinates are independent of layout', () {
     final region = bodyRegionsV1.firstWhere((r) => r.code == 'viewer_left_arm');
@@ -47,6 +82,7 @@ void main() {
           y: .3,
           severity: 7,
           painType: 'sharp',
+          assetVersion: 'v2',
         ),
       ];
       final symptom = SymptomEntry(
@@ -60,6 +96,7 @@ void main() {
       expect(symptom.pain.length, 2);
       expect(symptom.pain.last.severity, 7);
       expect(symptom.pain.first.assetVersion, 'v1');
+      expect(symptom.pain.last.assetVersion, 'v2');
       expect(
         () => PainObservation(id: 'p', view: 'front', x: 0, y: 0, severity: 2),
         throwsArgumentError,

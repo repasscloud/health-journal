@@ -26,7 +26,8 @@ class _SymptomFormState extends State<SymptomForm> {
   int severity = 5;
   String? error;
   void add(double x, double y) {
-    if (bodyRegionAt(x, y) == null) {
+    if (bodyRegionAt(x, y, version: currentBodyMapVersion, view: view) ==
+        null) {
       setState(() => error = 'Choose a point inside the body silhouette.');
       return;
     }
@@ -40,6 +41,7 @@ class _SymptomFormState extends State<SymptomForm> {
           y: y,
           severity: severity,
           painType: type,
+          assetVersion: currentBodyMapVersion,
         ),
       );
     });
@@ -142,53 +144,54 @@ class _SymptomFormState extends State<SymptomForm> {
             ),
             Card(
               child: Center(
-                child: SizedBox(
-                  width: 200,
-                  height: 400,
-                  child: InteractiveViewer(
-                    minScale: 1,
-                    maxScale: 4,
-                    child: GestureDetector(
-                      onTapUp: (tap) => add(
-                        tap.localPosition.dx / 200,
-                        tap.localPosition.dy / 400,
-                      ),
-                      child: Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          SvgPicture.asset(
-                            'assets/bodymaps/v1/$view.svg',
-                            fit: BoxFit.fill,
-                            colorFilter: ColorFilter.mode(
-                              Theme.of(context).colorScheme.outline,
-                              BlendMode.srcIn,
-                            ),
-                            semanticsLabel:
-                                '$view body map, version 1. Use the region buttons to select without touch.',
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 200),
+                  child: AspectRatio(
+                    aspectRatio: .5,
+                    child: LayoutBuilder(
+                      builder: (context, bounds) => InteractiveViewer(
+                        minScale: 1,
+                        maxScale: 4,
+                        child: GestureDetector(
+                          behavior: HitTestBehavior.opaque,
+                          onTapUp: (tap) => add(
+                            tap.localPosition.dx / bounds.maxWidth,
+                            tap.localPosition.dy / bounds.maxHeight,
                           ),
-                          for (final p in pain.where((p) => p.view == view))
-                            Positioned(
-                              left: p.x * 200 - 12,
-                              top: p.y * 400 - 12,
-                              child: Semantics(
-                                label:
-                                    '${journalLabel(p.region)}, ${p.severity} out of 10, ${journalLabel(p.painType)}',
-                                child: CircleAvatar(
-                                  radius: 12,
-                                  backgroundColor: journalSeverityColor(
-                                    p.severity,
-                                    Theme.of(context).brightness,
-                                  ),
-                                  foregroundColor:
-                                      Theme.of(context).brightness ==
-                                          Brightness.dark
-                                      ? Colors.black
-                                      : Colors.white,
-                                  child: Text('${p.severity}'),
-                                ),
+                          child: Stack(
+                            fit: StackFit.expand,
+                            children: [
+                              SvgPicture.asset(
+                                'assets/bodymaps/$currentBodyMapVersion/$view.svg',
+                                fit: BoxFit.fill,
+                                semanticsLabel:
+                                    '$view body map. Use the region buttons to select without touch.',
                               ),
-                            ),
-                        ],
+                              for (final p in pain.where((p) => p.view == view))
+                                Positioned(
+                                  left: p.x * bounds.maxWidth - 12,
+                                  top: p.y * bounds.maxHeight - 12,
+                                  child: Semantics(
+                                    label:
+                                        '${journalLabel(p.region)}, ${p.severity} out of 10, ${journalLabel(p.painType)}',
+                                    child: CircleAvatar(
+                                      radius: 12,
+                                      backgroundColor: journalSeverityColor(
+                                        p.severity,
+                                        Theme.of(context).brightness,
+                                      ),
+                                      foregroundColor:
+                                          Theme.of(context).brightness ==
+                                              Brightness.dark
+                                          ? Colors.black
+                                          : Colors.white,
+                                      child: Text('${p.severity}'),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ),
                       ),
                     ),
                   ),
@@ -200,7 +203,7 @@ class _SymptomFormState extends State<SymptomForm> {
             Wrap(
               spacing: 8,
               children: [
-                for (final r in bodyRegionsV1)
+                for (final r in bodyRegionsV2)
                   OutlinedButton(
                     onPressed: () => add(r.center.$1, r.center.$2),
                     child: Text(journalLabel(anatomicalRegion(r, view))),

@@ -54,7 +54,8 @@ Final product name, bundle IDs/package IDs, brand assets, privacy-policy URL, su
 
 ## Development (implementation in progress)
 
-See [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for actual readiness. Native
+See [CHANGELOG.md](CHANGELOG.md) for changes and
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for readiness. Native
 record entry is currently gated pending release encryption verification on both targets.
 The web app is always a volatile fictional demo; no environment flag enables production
 web records. Reloading or opening a new tab constructs a new fixture.

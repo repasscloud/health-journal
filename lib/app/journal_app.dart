@@ -275,7 +275,7 @@ class _JournalHomeState extends State<JournalHome> {
             ClipRRect(
               borderRadius: BorderRadius.circular(12),
               child: Image.asset(
-                'web/icons/Icon-192.png',
+                'assets/branding/hj-monogram.png',
                 width: 40,
                 height: 40,
                 excludeFromSemantics: true,
@@ -564,13 +564,15 @@ class _JournalHomeState extends State<JournalHome> {
       const SizedBox(height: 10),
       Wrap(
         spacing: 8,
+        runSpacing: 8,
         children: [
           for (final filter in filters.entries)
             ChoiceChip(
               label: Text(filter.value),
               selected: historyFilter == filter.key,
-              onSelected: (value) =>
-                  setState(() => historyFilter = value ? filter.key : null),
+              onSelected: (selected) {
+                if (selected) setState(() => historyFilter = filter.key);
+              },
             ),
         ],
       ),

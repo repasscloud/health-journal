@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:health_journal/app/environment.dart';
 import 'package:health_journal/app/calendar_date_field.dart';
@@ -12,6 +13,36 @@ import 'package:health_journal/domain/measurement_units.dart';
 import 'package:health_journal/app/demo_notice.dart';
 
 void main() {
+  testWidgets('wrapped Timeline filters have space and one active choice', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(390, 844));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      JournalApp(environment: AppEnvironment.demo(), usePhonePreview: true),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Timeline'));
+    await tester.pumpAndSettle();
+
+    Finder chip(String label) => find.widgetWithText(ChoiceChip, label);
+    Iterable<String> selectedFilters() => tester
+        .widgetList<ChoiceChip>(find.byType(ChoiceChip))
+        .where((chip) => chip.selected)
+        .map((chip) => (chip.label as Text).data!);
+
+    expect(
+      tester.getTopLeft(chip('Regimens')).dy,
+      greaterThanOrEqualTo(tester.getBottomLeft(chip('All')).dy + 8),
+    );
+    expect(selectedFilters(), ['All']);
+    for (final label in ['Regimens', 'Doses', 'Doses', 'Measurements', 'All']) {
+      await tester.tap(chip(label));
+      await tester.pumpAndSettle();
+      expect(selectedFilters(), [label]);
+    }
+  });
+
   testWidgets('browser demo keeps home and settings in a phone-width column', (
     tester,
   ) async {
@@ -208,6 +239,45 @@ void main() {
     expect(find.widgetWithText(SimpleDialogOption, 'Taken'), findsOneWidget);
   });
 
+  testWidgets('symptom map displays v2 and accepts taps only inside the body', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(430, 1400));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(MaterialApp(home: SymptomForm(onSave: (_) {})));
+    await tester.pumpAndSettle();
+
+    final map = find.byType(SvgPicture);
+    String activeAsset() =>
+        (tester.widget<SvgPicture>(map).bytesLoader as SvgAssetLoader)
+            .assetName;
+    expect(activeAsset(), 'assets/bodymaps/v2/front.svg');
+    await tester.tap(find.text('Back'));
+    await tester.pumpAndSettle();
+    expect(activeAsset(), 'assets/bodymaps/v2/back.svg');
+
+    final rect = tester.getRect(map);
+    await tester.tapAt(
+      rect.topLeft + Offset(.5 * rect.width, .9 * rect.height),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(CircleAvatar), findsNothing);
+
+    await tester.tapAt(
+      rect.topLeft + Offset(.15 * rect.width, .575 * rect.height),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(CircleAvatar), findsOneWidget);
+    expect(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Semantics &&
+            widget.properties.label == 'Left Arm, 5 out of 10, Aching',
+      ),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('explicit PRN status and accessible multi-point symptom flow', (
     tester,
   ) async {
@@ -327,6 +397,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(environment.repository!.symptoms.single.pain.length, 2);
     expect(environment.repository!.symptoms.single.pain.first.severity, 10);
+    expect(
+      environment.repository!.symptoms.single.pain.first.assetVersion,
+      'v2',
+    );
     expect(
       environment.repository!.symptoms.single.pain.first.painType,
       'aching',
@@ -677,8 +751,8 @@ void main() {
     );
   });
 
-  const tile = Color(0xff182420);
-  const ink = Color(0xffe6f3da);
+  const tile = Color(0xff0a0a0a);
+  const ink = Color(0xfff5f5f5);
   for (final (brightness, background) in [
     (Brightness.light, const Color(0xfffafafa)),
     (Brightness.dark, const Color(0xff0a0a0a)),

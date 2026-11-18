@@ -1,13 +1,27 @@
-/// Geometry matches the bundled v1 SVG polygons in a 100 × 200 viewBox.
-/// Keep this revision when adding future assets. Coordinates use image bounds.
+import 'body_map_v2.dart';
+
+const currentBodyMapVersion = 'v2';
+
+/// A selectable region in the 100 × 200 body map viewBox.
+/// The v1 polygons also define the legacy silhouette.
 final class BodyRegion {
-  const BodyRegion(this.code, this.points);
+  const BodyRegion(this.code, this.points) : _anchor = null;
+  const BodyRegion.anchor(this.code, (double, double) anchor)
+    : _anchor = anchor,
+      points = const [];
   final String code;
   final List<(double, double)> points;
-  (double, double) get center => (
-    points.fold<double>(0, (s, p) => s + p.$1) / points.length / 100,
-    points.fold<double>(0, (s, p) => s + p.$2) / points.length / 200,
-  );
+  final (double, double)? _anchor;
+  (double, double) get center {
+    final (x, y) =
+        _anchor ??
+        (
+          points.fold<double>(0, (s, p) => s + p.$1) / points.length,
+          points.fold<double>(0, (s, p) => s + p.$2) / points.length,
+        );
+    return (x / 100, y / 200);
+  }
+
   bool contains(double x, double y) {
     var inside = false;
     for (var i = 0, j = points.length - 1; i < points.length; j = i++) {
@@ -83,10 +97,38 @@ const bodyRegionsV1 = [
   ]),
 ];
 
-BodyRegion? bodyRegionAt(double x, double y) {
+const bodyRegionsV2 = [
+  BodyRegion.anchor('head', (50, 17)),
+  BodyRegion.anchor('torso', (50, 65)),
+  BodyRegion.anchor('viewer_left_arm', (23, 76)),
+  BodyRegion.anchor('viewer_right_arm', (77, 76)),
+  BodyRegion.anchor('viewer_left_leg', (40, 133)),
+  BodyRegion.anchor('viewer_right_leg', (60, 133)),
+];
+
+BodyRegion? bodyRegionAt(
+  double x,
+  double y, {
+  String version = 'v1',
+  String view = 'front',
+}) {
   if (!x.isFinite || !y.isFinite || x < 0 || x > 1 || y < 0 || y > 1) {
     return null;
   }
+  if (version == 'v2') {
+    if (!bodyContainsV2(x, y, view)) return null;
+    if (y < .15) return bodyRegionsV2[0];
+
+    // The shoulder starts wider than the underarm. Below the underarm
+    // the arms remain outside the same lateral boundary.
+    final armBoundary = y < .283 ? .33 - (.283 - y) * .3 : .33;
+    final lateralBoundary = y >= .44 ? .28 : armBoundary;
+    if (y < .6 && x < lateralBoundary) return bodyRegionsV2[2];
+    if (y < .6 && x > 1 - lateralBoundary) return bodyRegionsV2[3];
+    if (y >= .5375) return bodyRegionsV2[x < .5 ? 4 : 5];
+    return bodyRegionsV2[1];
+  }
+  if (version != 'v1') return null;
   for (final region in bodyRegionsV1) {
     if (region.contains(x, y)) return region;
   }

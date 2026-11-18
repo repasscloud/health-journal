@@ -43,6 +43,7 @@ dependencies:
   flutter_secure_storage: ^11.2.0
   cryptography: ^2.9.0
   flutter_svg: ^2.4.0
+  path_parsing: ^1.1.0
 
 dev_dependencies:
   flutter_test:
@@ -69,7 +70,8 @@ flutter:
   uses-material-design: true
   assets:
     - assets/bodymaps/v1/
-    - web/icons/Icon-192.png
+    - assets/bodymaps/v2/
+    - assets/branding/hj-monogram.png
 
   # To add assets to your application, add an assets section, like this:
   # assets:
