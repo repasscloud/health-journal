@@ -51,3 +51,6 @@ app.*.map.json
 node_modules/
 test-results/
 playwright-report/
+
+# Junk files
+docs/design/example-pack-*/
