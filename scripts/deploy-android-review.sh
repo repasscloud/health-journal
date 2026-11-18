@@ -10,12 +10,20 @@ for tool in adb flutter; do
   fi
 done
 
-# ADB's USB selector excludes emulators and network-connected devices.
-# Resolve the serial up front so a device change during the build cannot retarget it.
-if ! serial=$(adb -d get-serialno) ||
-   [[ -z "$serial" || "$serial" == unknown ]] ||
+# Resolve the target once so a connection change cannot retarget deployment.
+if [[ "${1:-}" == --emulator && $# == 2 && "$2" =~ ^emulator-[0-9]+$ ]]; then
+  serial=$2
+elif [[ $# == 0 ]]; then
+  # ADB's USB selector excludes emulators and wireless devices.
+  serial=$(adb -d get-serialno) || serial=
+else
+  printf 'Usage: %s [--emulator emulator-SERIAL]\n' "$0" >&2
+  exit 2
+fi
+
+if [[ -z "$serial" || "$serial" == unknown ]] ||
    [[ "$(adb -s "$serial" get-state)" != device ]]; then
-  printf 'Connect one Android phone by USB and approve USB debugging on the phone.\n' >&2
+  printf 'Connect one authorised USB phone or select a running emulator.\n' >&2
   adb devices -l >&2
   exit 1
 fi
