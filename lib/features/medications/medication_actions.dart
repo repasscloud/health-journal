@@ -20,11 +20,12 @@ class MedicationActions extends StatefulWidget {
     required this.repository,
     required this.onChanged,
     this.recordFirst = false,
+    this.remindersAvailable = false,
   });
   final Medication medication;
   final JournalRepository repository;
   final VoidCallback onChanged;
-  final bool recordFirst;
+  final bool recordFirst, remindersAvailable;
   @override
   State<MedicationActions> createState() => _MedicationActionsState();
 }
@@ -53,6 +54,7 @@ class _MedicationActionsState extends State<MedicationActions> {
     var end = previous?.effectiveTo?.toLocal();
     var start = DateUtils.dateOnly(revisionTime.toLocal());
     var kind = previous?.kind ?? ScheduleKind.prn;
+    var reminderEnabled = previous?.reminderEnabled ?? false;
     final rules = <(TimeOfDay, Set<int>)>[
       if (previous != null && previous.rules.isNotEmpty)
         for (final rule in previous.rules)
@@ -140,6 +142,16 @@ class _MedicationActionsState extends State<MedicationActions> {
                       ),
                     ),
                     if (kind != ScheduleKind.prn) ...[
+                      if (widget.remindersAvailable)
+                        SwitchListTile(
+                          title: const Text('Local reminders'),
+                          subtitle: const Text(
+                            'Uses your Android notification settings',
+                          ),
+                          value: reminderEnabled,
+                          onChanged: (enabled) =>
+                              update(() => reminderEnabled = enabled),
+                        ),
                       for (final (i, rule) in rules.indexed) ...[
                         Row(
                           children: [
@@ -215,8 +227,10 @@ class _MedicationActionsState extends State<MedicationActions> {
                           previous == null ? start : revisionTime,
                         ),
                       ),
-                    const Text(
-                      'New regimens use the start date at local midnight. Revisions take effect now. Reminders are unavailable in this build.',
+                    Text(
+                      'New regimens use the start date at local midnight. '
+                      'Revisions take effect now.'
+                      '${widget.remindersAvailable ? '' : ' Reminders are unavailable in this build.'}',
                     ),
                     if (error != null) Text(error!),
                   ],
@@ -249,6 +263,8 @@ class _MedicationActionsState extends State<MedicationActions> {
                               ? end!.toUtc()
                               : null,
                           instructions: instructions.text,
+                          reminderEnabled:
+                              kind != ScheduleKind.prn && reminderEnabled,
                           rules: kind == ScheduleKind.prn
                               ? []
                               : [

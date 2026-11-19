@@ -65,3 +65,36 @@ final class MeasurementUnits {
     return '${kind.label} · $reading$pair ${symbol(kind)}';
   }
 }
+
+enum JournalAppearance { system, light, dark }
+
+final class JournalPreferences {
+  const JournalPreferences({
+    this.units = const MeasurementUnits(),
+    this.appearance = JournalAppearance.system,
+  });
+
+  final MeasurementUnits units;
+  final JournalAppearance appearance;
+
+  JournalPreferences withUnit(DisplayUnit unit) => JournalPreferences(
+    units: MeasurementUnits(
+      weight: switch (unit) {
+        DisplayUnit.kilograms || DisplayUnit.pounds => unit,
+        _ => units.weight,
+      },
+      temperature: switch (unit) {
+        DisplayUnit.celsius || DisplayUnit.fahrenheit => unit,
+        _ => units.temperature,
+      },
+      glucose: switch (unit) {
+        DisplayUnit.mmolPerLiter || DisplayUnit.mgPerDeciliter => unit,
+        _ => units.glucose,
+      },
+    ),
+    appearance: appearance,
+  );
+
+  JournalPreferences withAppearance(JournalAppearance value) =>
+      JournalPreferences(units: units, appearance: value);
+}

@@ -10,6 +10,7 @@ import 'package:health_journal/data/repositories/native_journal_repository.dart'
 import 'package:health_journal/data/repositories/native_medication_history.dart';
 import 'package:health_journal/data/repositories/native_records.dart';
 import 'package:health_journal/domain/medication.dart';
+import 'package:health_journal/domain/measurement_units.dart';
 import 'package:health_journal/domain/records.dart';
 import 'package:health_journal/domain/regimen.dart';
 import 'package:health_journal/domain/schedule_occurrences.dart';
@@ -36,6 +37,7 @@ void main() {
     unit: 'tablet',
     kind: ScheduleKind.fixed,
     effectiveFrom: at,
+    reminderEnabled: true,
     rules: [
       ScheduleRule(hour: 2, minute: 30, weekdays: {1, 7}),
     ],
@@ -112,6 +114,11 @@ void main() {
     await NativeStore.initializeProfile(db);
     var repository = await NativeJournalRepository.load(db);
     expect(repository.medications, isEmpty);
+    const preferences = JournalPreferences(
+      units: MeasurementUnits(weight: DisplayUnit.pounds),
+      appearance: JournalAppearance.dark,
+    );
+    await repository.savePreferences(preferences);
     final original = medication('Fictional catalogue record');
     await repository.saveMedication(original);
     await repository.addRegimen(regimen);
@@ -188,6 +195,8 @@ void main() {
     db = await NativeStore.openJournalAt(directory, keys);
     final records = NativeRecords(db);
     repository = await NativeJournalRepository.load(db);
+    expect(repository.preferences.units.weight, DisplayUnit.pounds);
+    expect(repository.preferences.appearance, JournalAppearance.dark);
     expect(repository.timeline(search: 'fictional symptom').single.id, 's');
     expect(
       repository.administrations.single.occurrenceKey,
@@ -205,6 +214,7 @@ void main() {
     expect((await records.medicationHistory('m')).single.name, original.name);
     expect((await records.regimen('r'))?.effectiveTo, later);
     expect((await records.regimen('r'))?.rules.single.weekdays, {1, 7});
+    expect((await records.regimen('r'))?.reminderEnabled, isTrue);
     final persisted = (await NativeMedicationHistory(db).read('e'))!;
     expect(persisted.catalogue?.name, original.name);
     expect(persisted.row.originalOffsetMinutes, 630);

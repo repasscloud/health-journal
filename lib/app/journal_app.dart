@@ -26,18 +26,28 @@ class JournalApp extends StatefulWidget {
     required this.environment,
     this.unlockOnStartup,
     this.privacySettings,
+    this.reminderSettings,
+    this.exportSettings,
+    this.onJournalChanged,
+    this.messengerKey,
     this.usePhonePreview = false,
   });
   final AppEnvironment environment;
   final Future<bool> Function()? unlockOnStartup;
   final bool usePhonePreview;
-  final WidgetBuilder? privacySettings;
+  final GlobalKey<ScaffoldMessengerState>? messengerKey;
+  final WidgetBuilder? privacySettings, reminderSettings, exportSettings;
+  final VoidCallback? onJournalChanged;
   @override
   State<JournalApp> createState() => _JournalAppState();
 }
 
 class _JournalAppState extends State<JournalApp> {
-  final _themeMode = ValueNotifier(ThemeMode.system);
+  late final _themeMode = ValueNotifier(
+    ThemeMode.values.byName(
+      widget.environment.repository?.preferences.appearance.name ?? 'system',
+    ),
+  );
 
   late final _lightTheme = journalTheme(Brightness.light);
   late final _darkTheme = journalTheme(Brightness.dark);
@@ -52,6 +62,9 @@ class _JournalAppState extends State<JournalApp> {
             environment: widget.environment,
             themeMode: _themeMode,
             privacySettings: widget.privacySettings,
+            reminderSettings: widget.reminderSettings,
+            exportSettings: widget.exportSettings,
+            onJournalChanged: widget.onJournalChanged,
           ),
         ),
       ),
@@ -70,6 +83,7 @@ class _JournalAppState extends State<JournalApp> {
       valueListenable: _themeMode,
       builder: (context, mode, _) => MaterialApp.router(
         title: 'Health Journal',
+        scaffoldMessengerKey: widget.messengerKey,
         builder: (context, child) {
           final journal = BuildNotice(
             review: widget.environment.isReview,
@@ -115,10 +129,14 @@ class JournalHome extends StatefulWidget {
     required this.environment,
     required this.themeMode,
     this.privacySettings,
+    this.reminderSettings,
+    this.exportSettings,
+    this.onJournalChanged,
   });
   final AppEnvironment environment;
   final ValueNotifier<ThemeMode> themeMode;
-  final WidgetBuilder? privacySettings;
+  final WidgetBuilder? privacySettings, reminderSettings, exportSettings;
+  final VoidCallback? onJournalChanged;
   @override
   State<JournalHome> createState() => _JournalHomeState();
 }
@@ -130,7 +148,47 @@ class _JournalHomeState extends State<JournalHome> {
   String? historyFilter;
   DateTimeRange? historyDates;
   int historyLimit = 20;
-  var units = const MeasurementUnits();
+  late final _preferences = ValueNotifier(
+    widget.environment.repository?.preferences ?? const JournalPreferences(),
+  );
+  final _savingPreferences = ValueNotifier(false);
+  int _settingsRevision = 0;
+  MeasurementUnits get units => _preferences.value.units;
+
+  @override
+  void dispose() {
+    _preferences.dispose();
+    _savingPreferences.dispose();
+    super.dispose();
+  }
+
+  Future<void> _changePreferences(JournalPreferences preferences) async {
+    if (_savingPreferences.value) return;
+    _savingPreferences.value = true;
+    try {
+      await widget.environment.repository?.savePreferences(preferences);
+      if (!mounted) return;
+      _preferences.value = preferences;
+      widget.themeMode.value = ThemeMode.values.byName(
+        preferences.appearance.name,
+      );
+      refresh();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save preferences. Try again.'),
+          ),
+        );
+      }
+    } finally {
+      if (mounted) {
+        _settingsRevision++;
+        _savingPreferences.value = false;
+      }
+    }
+  }
+
   static const labels = ['Today', 'Medications', 'Symptoms', 'Timeline'];
   static const icons = [
     Icons.today_outlined,
@@ -142,6 +200,7 @@ class _JournalHomeState extends State<JournalHome> {
   JournalRepository get repository => widget.environment.repository!;
 
   void refresh() {
+    widget.onJournalChanged?.call();
     if (mounted) setState(() {});
   }
 
@@ -156,6 +215,7 @@ class _JournalHomeState extends State<JournalHome> {
           id: medication.id,
           onChanged: refresh,
           recordFirst: recordFirst,
+          remindersAvailable: widget.reminderSettings != null,
         ),
       ),
     );
@@ -227,9 +287,12 @@ class _JournalHomeState extends State<JournalHome> {
     onPressed: () => Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (context) {
-          final preferences = ListView(
-            padding: journalInsets(context, maxWidth: 1016),
-            children: settings(),
+          final preferences = AnimatedBuilder(
+            animation: Listenable.merge([_preferences, _savingPreferences]),
+            builder: (context, _) => ListView(
+              padding: journalInsets(context, maxWidth: 1016),
+              children: settings(),
+            ),
           );
           return Scaffold(
             appBar: AppBar(title: const Text('Settings')),
@@ -725,31 +788,16 @@ class _JournalHomeState extends State<JournalHome> {
     unitControl(
       kind: MeasurementKind.weight,
       choices: const [DisplayUnit.kilograms, DisplayUnit.pounds],
-      onChanged: (value) => units = MeasurementUnits(
-        weight: value,
-        temperature: units.temperature,
-        glucose: units.glucose,
-      ),
     ),
     const SizedBox(height: 12),
     unitControl(
       kind: MeasurementKind.temperature,
       choices: const [DisplayUnit.celsius, DisplayUnit.fahrenheit],
-      onChanged: (value) => units = MeasurementUnits(
-        weight: units.weight,
-        temperature: value,
-        glucose: units.glucose,
-      ),
     ),
     const SizedBox(height: 12),
     unitControl(
       kind: MeasurementKind.glucose,
       choices: const [DisplayUnit.mmolPerLiter, DisplayUnit.mgPerDeciliter],
-      onChanged: (value) => units = MeasurementUnits(
-        weight: units.weight,
-        temperature: units.temperature,
-        glucose: value,
-      ),
     ),
     const SizedBox(height: 16),
     section('Appearance'),
@@ -790,17 +838,35 @@ class _JournalHomeState extends State<JournalHome> {
             title: Text('Backup and restore'),
             subtitle: Text('Encrypted backups and restore are unavailable.'),
           ),
-          const ListTile(
-            leading: JournalIcon(Icons.description_outlined),
-            title: Text('Reports and exports'),
+          ListTile(
+            leading: const JournalIcon(Icons.description_outlined),
+            title: const Text('Reports and exports'),
             subtitle: Text(
-              'Report generation and health imports are unavailable.',
+              widget.exportSettings == null
+                  ? 'Report generation and health imports are unavailable.'
+                  : 'Save a CSV file',
             ),
+            onTap: widget.exportSettings == null
+                ? null
+                : () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(builder: widget.exportSettings!),
+                  ),
           ),
-          const ListTile(
-            leading: JournalIcon(Icons.notifications_none),
-            title: Text('Reminders'),
-            subtitle: Text('This build does not send notifications.'),
+          ListTile(
+            leading: const JournalIcon(Icons.notifications_none),
+            title: const Text('Reminders'),
+            subtitle: Text(
+              widget.reminderSettings == null
+                  ? 'This build does not send notifications.'
+                  : 'Permissions and test notification',
+            ),
+            onTap: widget.reminderSettings == null
+                ? null
+                : () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(builder: widget.reminderSettings!),
+                  ),
           ),
         ],
       ),
@@ -814,8 +880,8 @@ class _JournalHomeState extends State<JournalHome> {
   Widget unitControl({
     required MeasurementKind kind,
     required List<DisplayUnit> choices,
-    required ValueChanged<DisplayUnit> onChanged,
   }) => DropdownButtonFormField<DisplayUnit>(
+    key: ValueKey((units.preference(kind), _settingsRevision)),
     isExpanded: true,
     initialValue: units.preference(kind),
     decoration: InputDecoration(labelText: kind.label),
@@ -823,14 +889,19 @@ class _JournalHomeState extends State<JournalHome> {
       for (final choice in choices)
         DropdownMenuItem(value: choice, child: Text(choice.symbol)),
     ],
-    onChanged: (value) {
-      if (value != null) setState(() => onChanged(value));
-    },
+    onChanged: _savingPreferences.value
+        ? null
+        : (value) {
+            if (value != null) {
+              _changePreferences(_preferences.value.withUnit(value));
+            }
+          },
   );
 
   Widget appearanceControl() => ValueListenableBuilder<ThemeMode>(
     valueListenable: widget.themeMode,
     builder: (context, mode, _) => DropdownButtonFormField<ThemeMode>(
+      key: ValueKey((mode, _settingsRevision)),
       initialValue: mode,
       decoration: const InputDecoration(
         labelText: 'Theme',
@@ -841,9 +912,17 @@ class _JournalHomeState extends State<JournalHome> {
         DropdownMenuItem(value: ThemeMode.light, child: Text('Light')),
         DropdownMenuItem(value: ThemeMode.dark, child: Text('Dark')),
       ],
-      onChanged: (value) {
-        if (value != null) widget.themeMode.value = value;
-      },
+      onChanged: _savingPreferences.value
+          ? null
+          : (value) {
+              if (value != null) {
+                _changePreferences(
+                  _preferences.value.withAppearance(
+                    JournalAppearance.values.byName(value.name),
+                  ),
+                );
+              }
+            },
     ),
   );
 
@@ -1012,11 +1091,12 @@ class _MedicationPage extends StatefulWidget {
     required this.id,
     required this.onChanged,
     required this.recordFirst,
+    required this.remindersAvailable,
   });
   final JournalRepository repository;
   final String id;
   final VoidCallback onChanged;
-  final bool recordFirst;
+  final bool recordFirst, remindersAvailable;
 
   @override
   State<_MedicationPage> createState() => _MedicationPageState();
@@ -1039,8 +1119,9 @@ class _MedicationPageState extends State<_MedicationPage> {
                 medication: medication,
                 repository: widget.repository,
                 recordFirst: widget.recordFirst,
+                remindersAvailable: widget.remindersAvailable,
                 onChanged: () {
-                  setState(() {});
+                  if (mounted) setState(() {});
                   widget.onChanged();
                 },
               ),

@@ -139,6 +139,7 @@ final class NativeRecords {
       effectiveFrom: _instant(row.effectiveFrom),
       effectiveTo: _optionalInstant(row.effectiveTo),
       instructions: row.instructionsSnapshot,
+      reminderEnabled: row.reminderEnabled == 1,
       rules: [
         for (final rule in weekdays.entries)
           ScheduleRule(
@@ -199,6 +200,7 @@ final class NativeRecords {
             effectiveTo: Value(end),
             instructionsSnapshot: value.instructions,
             zonePolicy: Value(value.zonePolicy),
+            reminderEnabled: Value(value.reminderEnabled ? 1 : 0),
           ),
         );
     await _db.batch(

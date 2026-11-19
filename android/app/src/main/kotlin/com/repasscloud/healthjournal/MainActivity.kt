@@ -1,5 +1,8 @@
 package com.repasscloud.healthjournal
 
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
@@ -10,6 +13,29 @@ import java.io.File
 import java.util.TimeZone
 
 class MainActivity : FlutterActivity() {
+    private val documents = JournalDocuments(this)
+
+    @Deprecated("Deprecated in the Android Activity API")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (!documents.onActivityResult(requestCode, resultCode, data)) {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private var notificationRequest: MethodChannel.Result? = null
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == 4801) {
+            notificationRequest?.success(JournalReminderReceiver.enabled(this))
+            notificationRequest = null
+        }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.FLAVOR == "production") {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -34,6 +60,41 @@ class MainActivity : FlutterActivity() {
         // storage/key plugins or the protected-directory channel for this flavor.
         if (BuildConfig.FLAVOR == "review") return
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "health_journal/documents").setMethodCallHandler { call, result ->
+            if (call.method == "saveCsv") documents.saveCsv(call.arguments as? ByteArray, result)
+            else result.notImplemented()
+        }
+
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "health_journal/reminders").setMethodCallHandler { call, result ->
+            try {
+                when (call.method) {
+                    "enabled" -> result.success(JournalReminderReceiver.enabled(this))
+                    "test" -> result.success(JournalReminderReceiver.test(this))
+                    "replace" -> {
+                        val times = call.arguments as? List<*> ?: emptyList<Any>()
+                        JournalReminderReceiver.replace(this, times.mapNotNull { (it as? Number)?.toLong() })
+                        result.success(null)
+                    }
+                    "request" -> {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED) {
+                            result.success(JournalReminderReceiver.enabled(this))
+                        } else if (notificationRequest != null) {
+                            result.error("permission_pending", "A permission request is already open.", null)
+                        } else {
+                            notificationRequest = result
+                            requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 4801)
+                        }
+                    }
+                    else -> result.notImplemented()
+                }
+            } catch (_: Exception) {
+                if (notificationRequest == result) notificationRequest = null
+                result.error("reminders_unavailable", "Reminders could not be updated.", null)
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "health_journal/private_store").setMethodCallHandler { call, result ->
             if (call.method != "prepare") {

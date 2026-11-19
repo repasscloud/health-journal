@@ -93,7 +93,9 @@ Records survive restart, and historical markers remain aligned.
 
 - [ ] Add opt-in local notifications with bounded scheduling, explicit action
   confirmation, privacy controls and permission handling. Test rescheduling
-  after reboot and timezone or daylight-saving changes.
+  after reboot and timezone or daylight-saving changes. Android now offers
+  private best-effort reminders, with an opt-in per regimen and a contextual
+  permission request. Background regeneration and iOS remain open.
   [#6](https://github.com/repasscloud/health-journal/issues/6)
 - [ ] Implement optional PIN and biometric unlock, fallback and throttling,
   background and inactivity locking, and app-switcher privacy. Test denied or
@@ -109,7 +111,8 @@ app locks protect access on both mobile platforms.
 
 - [ ] Generate local PDF reports and CSV exports. Render versioned pain markers
   from saved coordinates, verify pagination and provenance, and integrate OS
-  file picker and share workflows.
+  file picker and share workflows. Android CSV output uses a user-selected
+  document. The PDF report and iOS output remain open.
   [#8](https://github.com/repasscloud/health-journal/issues/8)
 - [ ] Implement password-only portable encrypted backups with a versioned,
   authenticated header. Benchmark the password derivation on supported devices

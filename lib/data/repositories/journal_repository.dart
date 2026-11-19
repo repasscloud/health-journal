@@ -1,10 +1,13 @@
 import 'dart:async';
 
 import '../../domain/medication.dart';
+import '../../domain/measurement_units.dart';
 import '../../domain/regimen.dart';
 import '../../domain/records.dart';
 
 abstract interface class JournalRepository {
+  JournalPreferences get preferences;
+  FutureOr<void> savePreferences(JournalPreferences preferences);
   List<SymptomEntry> get symptoms;
   List<Measurement> get measurements;
   FutureOr<void> addSymptom(SymptomEntry symptom);

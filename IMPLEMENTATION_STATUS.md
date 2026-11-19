@@ -673,3 +673,27 @@ These are end-to-end timings for one sample, including the KDF. The probe
 cleaned its temporary files. Production UI, document-provider handoff,
 actual Android-to-iOS transfer and restore process-kill tests remain open.
 See [ADR 0010](docs/adr/0010-portable-backup-container.md).
+
+## 2026-11-19 — Android reminders, CSV and preferences
+
+- **Reminders.** Android production schedules up to seven days or 64 local
+  alarms from opted-in regimens. On the physical Galaxy A14 5G, the contextual
+  prompt supported denial and later approval. The test notification posted with
+  secret visibility, and a fictional daily regimen scheduled seven alarms.
+  They were present again after installing and starting a new release build.
+  The app displayed no recorded dose from the notification. Actual timed
+  delivery, background reboot/timezone regeneration and iOS remain open.
+- **CSV.** The same isolated release saved a fictional file through Android
+  Downloads. A standard CSV parser verified catalogue, canonical weight,
+  symptom revision and versioned marker data. The app returned to its PIN
+  gate from the picker and confirmed the save after unlock. The disposable
+  document was removed from the phone. PDF reports and iOS exports remain open.
+- **Preferences.** Theme and display units now reopen from the encrypted
+  settings table. The host repository test confirms both persist. The web
+  still creates a new volatile repository with each load.
+- **Verification.** Analysis and all 78 Flutter tests passed. The browser
+  acceptance suite passed three runs after the test began waiting for Flutter
+  Web's text-editing client before typing. This addresses the earlier CI
+  focus failure without changing the reset and isolation assertions.
+
+See [ADR 0011](docs/adr/0011-android-reminders-and-document-output.md).

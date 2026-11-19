@@ -1,5 +1,6 @@
 import '../../domain/administration_snapshots.dart';
 import '../../domain/medication.dart';
+import '../../domain/measurement_units.dart';
 import '../../domain/regimen.dart';
 import '../../domain/records.dart';
 import '../repositories/journal_repository.dart';
@@ -155,6 +156,16 @@ final class DemoRepository implements JournalRepository {
         ),
       );
     }
+  }
+
+  var _preferences = const JournalPreferences();
+
+  @override
+  JournalPreferences get preferences => _preferences;
+
+  @override
+  void savePreferences(JournalPreferences preferences) {
+    _preferences = preferences;
   }
 
   final List<SymptomEntry> _symptoms = [];

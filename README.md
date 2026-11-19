@@ -82,11 +82,14 @@ Confirm `HEALTH_JOURNAL_ENCRYPTION_PROOF:PASS` in device logs. Test on both mobi
 a build alone is insufficient. This target replaces the development app with a probe,
 so use a dedicated test installation, never a personal-record installation.
 
-Production design: local-only, one person, no accounts or backend. Portable recovery will
-require the backup file and its password; a forgotten password cannot be recovered by a
-server. Notifications will be best effort. PDF/CSV exports will be readable files and
-must be shared carefully. The journal provides no medical advice. These later workflows
-are not yet implemented. Publisher IDs, privacy policy and support details must be
+Android production stores the journal and user preferences locally. It offers
+an optional journal PIN, per-regimen reminders and a CSV export to a location
+you choose. Reminders use best-effort Android notifications. Open the journal
+after a reboot or clock change to refresh them. CSV files are readable by
+anyone who can access the export. The journal provides no medical advice.
+
+PDF reports and production backup/restore controls are still in development.
+Portable recovery will require the backup file and its password. Publisher IDs, privacy policy and support details must be
 set before release. No signing team or credentials are committed.
 
 Additional fictional native store probe:

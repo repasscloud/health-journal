@@ -1,7 +1,11 @@
+import 'package:drift/drift.dart';
+
 import '../../domain/medication.dart';
+import '../../domain/measurement_units.dart';
 import '../../domain/records.dart';
 import '../../domain/regimen.dart';
-import '../schema/journal_database.dart' show JournalDatabase;
+import '../schema/journal_database.dart'
+    show JournalDatabase, JournalSettingsCompanion;
 import 'journal_repository.dart';
 import 'journal_timeline.dart';
 import 'native_medication_history.dart';
@@ -33,7 +37,28 @@ final class NativeJournalRepository implements JournalRepository {
         final medications = await _records.medications();
         final symptoms = await _records.symptoms();
         final events = await _doses.all();
+        final settings = await _db
+            .select(_db.journalSettings)
+            .getSingleOrNull();
         return _JournalSnapshot(
+          preferences: settings == null
+              ? const JournalPreferences()
+              : JournalPreferences(
+                  units: MeasurementUnits(
+                    weight: settings.weightUnit == 'lb'
+                        ? DisplayUnit.pounds
+                        : DisplayUnit.kilograms,
+                    temperature: settings.temperatureUnit == 'fahrenheit'
+                        ? DisplayUnit.fahrenheit
+                        : DisplayUnit.celsius,
+                    glucose: settings.glucoseUnit == 'mg/dL'
+                        ? DisplayUnit.mgPerDeciliter
+                        : DisplayUnit.mmolPerLiter,
+                  ),
+                  appearance: JournalAppearance.values.byName(
+                    settings.appearance,
+                  ),
+                ),
           medications: List.unmodifiable(medications),
           medicationHistory: List.unmodifiable([
             for (final medication in medications)
@@ -100,6 +125,26 @@ final class NativeJournalRepository implements JournalRepository {
       originalOffsetMinutes: row.originalOffsetMinutes,
     );
   }
+
+  @override
+  JournalPreferences get preferences => _snapshot.preferences;
+
+  @override
+  Future<void> savePreferences(JournalPreferences preferences) =>
+      _write(() async {
+        final units = preferences.units;
+        await _db
+            .into(_db.journalSettings)
+            .insertOnConflictUpdate(
+              JournalSettingsCompanion(
+                singleton: const Value(1),
+                weightUnit: Value(units.weight.symbol),
+                temperatureUnit: Value(units.temperature.name),
+                glucoseUnit: Value(units.glucose.symbol),
+                appearance: Value(preferences.appearance.name),
+              ),
+            );
+      });
 
   @override
   List<Medication> get medications => _snapshot.medications;
@@ -175,6 +220,7 @@ final class NativeJournalRepository implements JournalRepository {
 
 final class _JournalSnapshot {
   const _JournalSnapshot({
+    required this.preferences,
     required this.medications,
     required this.medicationHistory,
     required this.regimens,
@@ -185,6 +231,7 @@ final class _JournalSnapshot {
     required this.legacyEvents,
   });
 
+  final JournalPreferences preferences;
   final List<Medication> medications, medicationHistory;
   final List<Regimen> regimens;
   final List<SymptomEntry> symptoms;

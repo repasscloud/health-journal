@@ -6,6 +6,10 @@ import 'package:flutter/services.dart';
 
 import '../data/repositories/native_journal_repository.dart';
 import '../data/schema/journal_database.dart';
+import '../domain/reminder_plan.dart';
+import '../features/reminder_settings.dart';
+import '../features/reports/journal_csv.dart';
+import '../features/reports/journal_export.dart';
 import '../features/security_pin_form.dart';
 import '../platform/security/journal_pin.dart';
 import '../platform/security/native_store.dart';
@@ -29,8 +33,11 @@ class AndroidJournal extends StatefulWidget {
 
 class _AndroidJournalState extends State<AndroidJournal>
     with WidgetsBindingObserver {
+  final _messenger = GlobalKey<ScaffoldMessengerState>();
+  bool _exporting = false;
+  String? _exportResult;
   final _pin = JournalPin(const SecureInstallationKeyStore.journalPin());
-  Timer? _idle;
+  Timer? _idle, _reminderRefresh;
   bool _pinEnabled = false;
   bool _locked = false;
   int _lockEpoch = 0;
@@ -62,11 +69,68 @@ class _AndroidJournalState extends State<AndroidJournal>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _queueReminders();
     if (state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
       _lock();
     }
+  }
+
+  Future<void> _exportCsv() async {
+    final repository = _repository;
+    if (_exporting || _locked || repository == null) return;
+    setState(() => _exporting = true);
+    final bytes = journalCsv(repository);
+    try {
+      final saved = await const MethodChannel('health_journal/documents')
+          .invokeMethod<bool>('saveCsv', bytes);
+      _exportResult = saved == true
+          ? 'CSV saved to the chosen location.'
+          : null;
+    } catch (_) {
+      _exportResult = 'Could not save the CSV to the chosen location.';
+    } finally {
+      bytes.fillRange(0, bytes.length, 0);
+      if (mounted) setState(() => _exporting = false);
+      _showExportResult();
+    }
+  }
+
+  void _showExportResult() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final result = _exportResult;
+      final messenger = _messenger.currentState;
+      if (!mounted || _locked || result == null || messenger == null) return;
+      _exportResult = null;
+      messenger.showSnackBar(SnackBar(content: Text(result)));
+    });
+  }
+
+  void _queueReminders() {
+    _reminderRefresh?.cancel();
+    if (!mounted || _repository == null) return;
+    _reminderRefresh = Timer(const Duration(milliseconds: 250), () async {
+      final repository = _repository;
+      if (!mounted || repository == null) return;
+      final plan = planMedicationReminders(
+        now: DateTime.now(),
+        medications: repository.medications,
+        regimens: repository.regimens,
+        enabledRegimenIds: {
+          for (final regimen in repository.regimens)
+            if (regimen.reminderEnabled) regimen.id,
+        },
+        administrations: repository.administrations,
+      );
+      try {
+        await journalRemindersChannel.invokeMethod<void>('replace', [
+          for (final slot in plan) slot.at.millisecondsSinceEpoch,
+        ]);
+      } on PlatformException {
+        // System scheduling is best effort. The next resume or edit retries.
+      }
+    });
   }
 
   void _lock() {
@@ -97,6 +161,7 @@ class _AndroidJournalState extends State<AndroidJournal>
     });
     if (_database == null) await _prepare(_openDatabase);
     _resetIdle();
+    _showExportResult();
     return true;
   }
 
@@ -122,6 +187,7 @@ class _AndroidJournalState extends State<AndroidJournal>
     _database = database;
     if (await database.select(database.profile).getSingleOrNull() != null) {
       _repository = await NativeJournalRepository.load(database);
+      _queueReminders();
     }
   }
 
@@ -131,6 +197,7 @@ class _AndroidJournalState extends State<AndroidJournal>
       final database = _database!;
       await NativeStore.initializeProfile(database);
       _repository = await NativeJournalRepository.load(database);
+      _queueReminders();
     });
   }
 
@@ -150,6 +217,7 @@ class _AndroidJournalState extends State<AndroidJournal>
   @override
   void dispose() {
     _idle?.cancel();
+    _reminderRefresh?.cancel();
     WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_onKey);
     final database = _database;
@@ -176,6 +244,11 @@ class _AndroidJournalState extends State<AndroidJournal>
         onPointerSignal: (_) => _resetIdle(),
         child: JournalApp(
           environment: AppEnvironment.production(repository),
+          onJournalChanged: _queueReminders,
+          messengerKey: _messenger,
+          exportSettings: (_) => JournalExport(onExport: _exportCsv),
+          reminderSettings: (_) =>
+              ReminderSettings(onPermissionChanged: _queueReminders),
           privacySettings: (_) =>
               JournalPinForm(enabled: _pinEnabled, onSubmit: _configurePin),
         ),

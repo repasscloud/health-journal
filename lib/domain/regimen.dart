@@ -36,6 +36,7 @@ final class Regimen {
     required this.effectiveFrom,
     this.effectiveTo,
     this.instructions = '',
+    this.reminderEnabled = false,
     List<ScheduleRule> rules = const [],
   }) : unit = unit.trim(),
        rules = List.unmodifiable(rules) {
@@ -76,6 +77,7 @@ final class Regimen {
   final DateTime effectiveFrom;
   final DateTime? effectiveTo;
   final String instructions;
+  final bool reminderEnabled;
   final List<ScheduleRule> rules;
   String get zonePolicy => 'deviceLocal';
   bool contains(DateTime instant) =>
@@ -96,6 +98,7 @@ final class Regimen {
     effectiveFrom: effectiveFrom,
     effectiveTo: end,
     instructions: instructions,
+    reminderEnabled: reminderEnabled,
     rules: rules,
   );
 

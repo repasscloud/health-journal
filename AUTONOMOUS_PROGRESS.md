@@ -5,9 +5,9 @@
 - Latest validated code is the commit carrying this checkpoint. Run
   `git log -1 --oneline` for the exact revision.
 - Android foundation and the shared native record composition are active.
-  Issues #1 and #2 have physical review evidence. Issues #3, #5 and #16–#18
+  Issue #2 is closed. Issue #1 has physical Android review and production evidence, with iOS deferred. Issues #3, #5 and #16–#18
   retain open acceptance criteria.
-- Flutter 3.47.9, 74 foundation, PIN and backup Flutter tests, analyzer, web release and two Chrome
+- Flutter 3.47.9, 78 Flutter tests, analyzer, web release and two Chrome
   Playwright cases passed. See [implementation status](IMPLEMENTATION_STATUS.md)
   for physical storage and production-path evidence. No iOS tests were run.
 - The physical Galaxy A14 5G is `R9WW30CSG1K`. The shared app ID exists.
@@ -16,11 +16,16 @@
 - Android #7 PIN enrollment, background lock, incorrect PIN and cold unlock
   passed on hardware, along with blank Overview and five-minute idle lock.
   Biometrics and older Android fallback remain open.
-- Next active issue is #6, starting with the Android permission and local
-  delivery path. #8 exports, #9–#11 backup and deletion, and #12–#15 production
-  hardening remain open. The #9/#10 backup backend passed host validation
-  and a fictional Android file round trip. Production document-provider
-  handoff, preview/confirmation controls and crash-device tests are pending. iOS runtime, signing and
+- Android #6 permission denial/grant, secret test notification and bounded
+  system alarm scheduling passed on hardware. Automatic background regeneration,
+  timed delivery verification and iOS remain open.
+- Android #8 CSV save through Downloads passed with fictional data. PDF and
+  iOS export remain open.
+- Next active issues are #9/#10 production backup and restore controls, using
+  the verified backend and Android document-provider integration. The backend
+  passed host validation and a fictional Android file round trip. Production
+  handoff, preview/confirmation controls and crash-device tests are pending.
+  #11 deletion and #12–#15 hardening remain open. iOS runtime, signing and
   hardware acceptance remain deferred.
 
 ```sh
