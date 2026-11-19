@@ -20,7 +20,7 @@ void main() {
     final check = await db.customSelect('PRAGMA foreign_key_check').get();
     expect(check, isEmpty);
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 3);
+    expect(version.read<int>('user_version'), 4);
   });
   test(
     'coordinates and severity cannot bypass the database contract',

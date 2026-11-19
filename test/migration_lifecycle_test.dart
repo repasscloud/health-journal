@@ -34,7 +34,7 @@ void main() {
       }
       db.execute('INSERT INTO profile VALUES (1, ?, NULL)', [sentinel]);
       db.execute(
-        "INSERT INTO symptom_entries VALUES ('s', ?, 1, NULL, 1, 1, 4, '')",
+        "INSERT INTO symptom_entries (id, title, onset_at, end_at, recorded_at, updated_at, severity, notes) VALUES ('s', ?, 1, NULL, 1, 1, 4, '')",
         [sentinel],
       );
       db.execute('''
@@ -164,7 +164,7 @@ void main() {
               .data
               .values
               .single,
-          3,
+          4,
         );
         expect(
           (await journal.select(journal.painMarkers).getSingle())
@@ -192,6 +192,38 @@ void main() {
       scan();
     }, timeout: const Timeout(Duration(seconds: 90)));
   }
+
+  test(
+    'exported v3 upgrades before the first valid measurement write',
+    () async {
+      await seed(3);
+      final journal = await NativeStore.openJournalAt(directory, keys);
+      try {
+        expect(
+          (await journal.select(journal.symptomEntries).getSingle()).title,
+          sentinel,
+        );
+        await journal.customStatement("""
+        INSERT INTO measurements (id, kind, value, measured_at, recorded_at)
+        VALUES ('sample','weight',72,1,2)
+      """);
+        expect(
+          (await journal.select(journal.measurements).getSingle()).value,
+          72,
+        );
+        await expectLater(
+          journal.customStatement("""
+        INSERT INTO measurements (id, kind, value, measured_at, recorded_at)
+        VALUES ('invalid','weight',1e999,1,2)
+      """),
+          throwsException,
+        );
+      } finally {
+        await journal.close();
+      }
+      await inspectSnapshot(3);
+    },
+  );
 
   test('snapshot captures committed WAL rows independently', () async {
     await seed(2, journalMode: 'WAL');

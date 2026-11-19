@@ -7,6 +7,8 @@ import '../../app/calendar_date_field.dart';
 import '../../data/repositories/journal_repository.dart';
 import '../../domain/medication.dart';
 import '../../domain/regimen.dart';
+import '../../domain/schedule_occurrences.dart';
+import '../../platform/time/device_time_zone.dart';
 import 'medication_editor.dart';
 import 'medication_forms.dart';
 import 'regimen_validation.dart';
@@ -39,16 +41,6 @@ class _MedicationActionsState extends State<MedicationActions> {
   }
 
   Future<void> addRegimen({Regimen? previous}) async {
-    if (previous != null && !hasSharedWeekdays(previous.rules)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'This regimen has different weekdays per time. Revision is unavailable; its individual rules have been preserved.',
-          ),
-        ),
-      );
-      return;
-    }
     final revisionTime = DateTime.now().toUtc();
     final form = GlobalKey<FormState>();
     final amount = TextEditingController(
@@ -61,27 +53,15 @@ class _MedicationActionsState extends State<MedicationActions> {
     var end = previous?.effectiveTo?.toLocal();
     var start = DateUtils.dateOnly(revisionTime.toLocal());
     var kind = previous?.kind ?? ScheduleKind.prn;
-    final times = <TimeOfDay>[
+    final rules = <(TimeOfDay, Set<int>)>[
       if (previous != null && previous.rules.isNotEmpty)
         for (final rule in previous.rules)
-          TimeOfDay(hour: rule.hour, minute: rule.minute)
+          (TimeOfDay(hour: rule.hour, minute: rule.minute), {...rule.weekdays})
       else
-        const TimeOfDay(hour: 8, minute: 0),
+        (const TimeOfDay(hour: 8, minute: 0), {1, 2, 3, 4, 5, 6, 7}),
     ];
-    final weekdays = <int>{
-      if (previous != null && previous.rules.isNotEmpty)
-        ...previous.rules.expand((r) => r.weekdays)
-      else ...{
-        1,
-        2,
-        3,
-        4,
-        5,
-        6,
-        7,
-      },
-    };
     String? error;
+    var saving = false;
     await showDialog<void>(
       context: context,
       builder: (context) => StatefulBuilder(
@@ -160,7 +140,7 @@ class _MedicationActionsState extends State<MedicationActions> {
                       ),
                     ),
                     if (kind != ScheduleKind.prn) ...[
-                      for (var i = 0; i < times.length; i++)
+                      for (final (i, rule) in rules.indexed) ...[
                         Row(
                           children: [
                             Expanded(
@@ -168,56 +148,61 @@ class _MedicationActionsState extends State<MedicationActions> {
                                 onPressed: () async {
                                   final chosen = await showTimePicker(
                                     context: context,
-                                    initialTime: times[i],
+                                    initialTime: rule.$1,
                                   );
-                                  if (chosen != null) {
-                                    update(() => times[i] = chosen);
+                                  if (chosen != null && context.mounted) {
+                                    update(() => rules[i] = (chosen, rule.$2));
                                   }
                                 },
                                 child: Text(
-                                  'Local time: ${times[i].format(context)}',
+                                  'Local time: ${rule.$1.format(context)}',
                                 ),
                               ),
                             ),
                             IconButton(
                               tooltip: 'Remove time',
-                              onPressed: times.length == 1
+                              onPressed: rules.length == 1
                                   ? null
-                                  : () => update(() => times.removeAt(i)),
+                                  : () => update(() => rules.removeAt(i)),
                               icon: const Icon(Icons.remove_circle_outline),
                             ),
                           ],
                         ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 4,
+                          children: [
+                            for (final (index, day) in const [
+                              'Mon',
+                              'Tue',
+                              'Wed',
+                              'Thu',
+                              'Fri',
+                              'Sat',
+                              'Sun',
+                            ].indexed)
+                              FilterChip(
+                                label: Text(day),
+                                selected: rule.$2.contains(index + 1),
+                                onSelected: (selected) => update(() {
+                                  if (selected) {
+                                    rule.$2.add(index + 1);
+                                  } else {
+                                    rule.$2.remove(index + 1);
+                                  }
+                                }),
+                              ),
+                          ],
+                        ),
+                      ],
                       TextButton(
                         onPressed: () => update(
-                          () => times.add(const TimeOfDay(hour: 18, minute: 0)),
+                          () => rules.add((
+                            const TimeOfDay(hour: 18, minute: 0),
+                            {1, 2, 3, 4, 5, 6, 7},
+                          )),
                         ),
                         child: const Text('Add time'),
-                      ),
-                      const Text('Weekdays (device local time)'),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 4,
-                        children: List.generate(
-                          7,
-                          (i) => FilterChip(
-                            label: Text(
-                              [
-                                'Mon',
-                                'Tue',
-                                'Wed',
-                                'Thu',
-                                'Fri',
-                                'Sat',
-                                'Sun',
-                              ][i],
-                            ),
-                            selected: weekdays.contains(i + 1),
-                            onSelected: (v) => update(() {
-                              v ? weekdays.add(i + 1) : weekdays.remove(i + 1);
-                            }),
-                          ),
-                        ),
                       ),
                     ],
                     if (kind == ScheduleKind.course)
@@ -245,10 +230,11 @@ class _MedicationActionsState extends State<MedicationActions> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              onPressed: unit.isEmpty
+              onPressed: unit.isEmpty || saving
                   ? null
-                  : () {
+                  : () async {
                       if (!form.currentState!.validate()) return;
+                      update(() => saving = true);
                       try {
                         final revision = Regimen(
                           id: const Uuid().v4(),
@@ -266,7 +252,7 @@ class _MedicationActionsState extends State<MedicationActions> {
                           rules: kind == ScheduleKind.prn
                               ? []
                               : [
-                                  for (final time in times)
+                                  for (final (time, weekdays) in rules)
                                     ScheduleRule(
                                       hour: time.hour,
                                       minute: time.minute,
@@ -275,20 +261,27 @@ class _MedicationActionsState extends State<MedicationActions> {
                                 ],
                         );
                         if (previous == null) {
-                          widget.repository.addRegimen(revision);
+                          await widget.repository.addRegimen(revision);
                         } else {
-                          widget.repository.reviseRegimen(
+                          await widget.repository.reviseRegimen(
                             previous.id,
                             revision,
                           );
                         }
-                        widget.onChanged();
-                        Navigator.pop(context);
+                        if (mounted) widget.onChanged();
+                        if (context.mounted &&
+                            ModalRoute.of(context)?.isCurrent == true) {
+                          Navigator.pop(context);
+                        }
                       } on ArgumentError {
+                        if (!context.mounted) return;
+                        update(() => saving = false);
                         update(
                           () => error = 'Choose weekdays, distinct times, a valid dose and dates.',
                         );
-                      } on StateError {
+                      } catch (_) {
+                        if (!context.mounted) return;
+                        update(() => saving = false);
                         update(
                           () => error = 'An effective regimen already exists. Overlapping revisions are not allowed.',
                         );
@@ -309,6 +302,17 @@ class _MedicationActionsState extends State<MedicationActions> {
   Future<void> record(Regimen? regimen, {Administration? original}) async {
     final adHoc = regimen == null && original == null;
     var occurred = (original?.occurredAt ?? DateTime.now()).toLocal();
+    ScheduleOccurrence? occurrence;
+    bool unavailableLocalTime = false;
+    void selectLocalTime(DateTime day, int hour, int minute) {
+      occurred = DateTime(day.year, day.month, day.day, hour, minute);
+      unavailableLocalTime =
+          occurred.day != day.day ||
+          occurred.hour != hour ||
+          occurred.minute != minute;
+      occurrence = null;
+    }
+
     final status = adHoc
         ? AdministrationStatus.taken
         : await showDialog<AdministrationStatus>(
@@ -361,6 +365,7 @@ class _MedicationActionsState extends State<MedicationActions> {
         (formUnit == 'mL' || formUnit == 'g' ? '' : formUnit);
     var showUnitField = defaultUnit.isEmpty;
     bool validTime() =>
+        !unavailableLocalTime &&
         !occurred.isAfter(DateTime.now()) &&
         (regimen == null || regimen.contains(occurred.toUtc()));
     final form = GlobalKey<FormState>();
@@ -418,10 +423,8 @@ class _MedicationActionsState extends State<MedicationActions> {
                             );
                             if (day == null || !context.mounted) return;
                             update(
-                              () => occurred = DateTime(
-                                day.year,
-                                day.month,
-                                day.day,
+                              () => selectLocalTime(
+                                day,
                                 occurred.hour,
                                 occurred.minute,
                               ),
@@ -440,10 +443,8 @@ class _MedicationActionsState extends State<MedicationActions> {
                             );
                             if (time == null || !context.mounted) return;
                             update(
-                              () => occurred = DateTime(
-                                occurred.year,
-                                occurred.month,
-                                occurred.day,
+                              () => selectLocalTime(
+                                occurred,
                                 time.hour,
                                 time.minute,
                               ),
@@ -514,6 +515,42 @@ class _MedicationActionsState extends State<MedicationActions> {
                       ),
                     ],
                     const SizedBox(height: 12),
+                    if (regimen != null &&
+                        original == null &&
+                        regimen.kind != ScheduleKind.prn)
+                      DropdownButton<ScheduleOccurrence>(
+                        isExpanded: true,
+                        value: occurrence,
+                        hint: const Text(
+                          'Link a scheduled occurrence (optional)',
+                        ),
+                        items: [
+                          const DropdownMenuItem(
+                            child: Text('No scheduled occurrence'),
+                          ),
+                          for (final slot in occurrencesForDate(
+                            regimen,
+                            occurred,
+                          ))
+                            if (!widget.repository.administrations.any(
+                              (entry) => entry.occurrenceKey == slot.key,
+                            ))
+                              DropdownMenuItem(
+                                value: occurrence?.key == slot.key
+                                    ? occurrence
+                                    : slot,
+                                child: Text(
+                                  'Scheduled ${TimeOfDay.fromDateTime(slot.at.toLocal()).format(context)}',
+                                ),
+                              ),
+                        ],
+                        onChanged: (selected) =>
+                            update(() => occurrence = selected),
+                      ),
+                    if (unavailableLocalTime)
+                      const Text(
+                        'That local time does not exist. Choose another time.',
+                      ),
                     const Text('Check for duplicates before confirming.'),
                     if (!validTime())
                       Text(
@@ -557,13 +594,15 @@ class _MedicationActionsState extends State<MedicationActions> {
     reason.dispose();
     notes.dispose();
     if (accepted != true || !mounted) return;
+    final originalZone = await readDeviceTimeZoneId() ?? occurred.timeZoneName;
+    if (!mounted) return;
     try {
       if (doseAmount == null) throw ArgumentError('Invalid dose.');
       if (regimen != null && !regimen.contains(eventTime)) {
         throw ArgumentError('Outside regimen.');
       }
       final now = DateTime.now().toUtc();
-      widget.repository.recordAdministration(
+      await widget.repository.recordAdministration(
         original != null || regimen == null
             ? Administration(
                 id: const Uuid().v4(),
@@ -586,6 +625,14 @@ class _MedicationActionsState extends State<MedicationActions> {
                 notes: noteText,
                 correctsId: original?.id,
                 correctionReason: reasonText,
+                occurrenceKey: original?.occurrenceKey,
+                intendedAt: original?.intendedAt,
+                originalZoneLabel: original?.occurredAt == eventTime
+                    ? original?.originalZoneLabel
+                    : originalZone,
+                originalOffsetMinutes: original?.occurredAt == eventTime
+                    ? original?.originalOffsetMinutes
+                    : occurred.timeZoneOffset.inMinutes,
               )
             : regimen.record(
                 eventId: const Uuid().v4(),
@@ -599,9 +646,13 @@ class _MedicationActionsState extends State<MedicationActions> {
                 notes: noteText,
                 actualAmount: doseAmount,
                 actualUnit: doseUnit,
+                occurrenceKey: occurrence?.key,
+                intendedAt: occurrence?.at,
+                originalZoneLabel: originalZone,
+                originalOffsetMinutes: occurred.timeZoneOffset.inMinutes,
               ),
       );
-      widget.onChanged();
+      if (mounted) widget.onChanged();
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -746,6 +797,13 @@ class _MedicationActionsState extends State<MedicationActions> {
             children: [
               detail('Medication at the time', event.medicationNameSnapshot),
               detail('Entered', journalDateTime(context, event.recordedAt)),
+              if (event.originalOffsetMinutes case final offset?)
+                detail(
+                  'Original local time',
+                  _originalLocalTime(context, event, offset),
+                ),
+              if (event.intendedAt case final intended?)
+                detail('Linked schedule', journalDateTime(context, intended)),
               if (event.correctionReason.isNotEmpty)
                 detail('Correction reason', event.correctionReason),
             ],
@@ -907,4 +965,18 @@ class _MedicationActionsState extends State<MedicationActions> {
       ),
     );
   }
+}
+
+String _originalLocalTime(
+  BuildContext context,
+  Administration event,
+  int offset,
+) {
+  final wall = event.occurredAt.add(Duration(minutes: offset));
+  final locale = MaterialLocalizations.of(context);
+  final hours = (offset.abs() ~/ 60).toString().padLeft(2, '0');
+  final minutes = (offset.abs() % 60).toString().padLeft(2, '0');
+  final sign = offset < 0 ? '-' : '+';
+  return '${locale.formatShortDate(wall)} at ${TimeOfDay.fromDateTime(wall).format(context)} '
+      '${event.originalZoneLabel} (UTC$sign$hours:$minutes)';
 }

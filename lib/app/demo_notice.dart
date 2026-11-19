@@ -8,14 +8,23 @@ const reviewNotice =
     'Review build — Sample data. Changes reset when the app restarts. Do not enter real health information.';
 
 class BuildNotice extends InheritedWidget {
-  const BuildNotice({super.key, required this.review, required super.child});
-  final bool review;
+  const BuildNotice({
+    super.key,
+    required this.review,
+    this.enabled = true,
+    required super.child,
+  });
+  final bool review, enabled;
+  static bool enabledOf(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<BuildNotice>()?.enabled ??
+      true;
   static String of(BuildContext context) =>
       context.dependOnInheritedWidgetOfExactType<BuildNotice>()?.review == true
       ? reviewNotice
       : demoNotice;
   @override
-  bool updateShouldNotify(BuildNotice oldWidget) => review != oldWidget.review;
+  bool updateShouldNotify(BuildNotice oldWidget) =>
+      review != oldWidget.review || enabled != oldWidget.enabled;
 }
 
 class BuildBanner extends StatelessWidget {
@@ -61,8 +70,10 @@ class JournalBody extends StatelessWidget {
   Widget build(BuildContext context) => Column(
     crossAxisAlignment: CrossAxisAlignment.stretch,
     children: [
-      const BuildBanner(),
-      Expanded(child: child),
+      if (BuildNotice.enabledOf(context)) const BuildBanner(),
+      Expanded(
+        child: SafeArea(top: false, left: false, right: false, child: child),
+      ),
     ],
   );
 }

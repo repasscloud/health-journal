@@ -109,6 +109,10 @@ final class Regimen {
     String notes = '',
     double? actualAmount,
     String? actualUnit,
+    String? occurrenceKey,
+    DateTime? intendedAt,
+    String? originalZoneLabel,
+    int? originalOffsetMinutes,
   }) {
     if (medication.id != medicationId) {
       throw ArgumentError('Medication mismatch.');
@@ -130,6 +134,10 @@ final class Regimen {
       unit: actualUnit ?? unit,
       regimenId: id,
       regimenSnapshot: this,
+      occurrenceKey: occurrenceKey,
+      intendedAt: intendedAt,
+      originalZoneLabel: originalZoneLabel,
+      originalOffsetMinutes: originalOffsetMinutes,
     );
   }
 }

@@ -13,6 +13,12 @@ import UIKit
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
     let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "JournalPrivateStore")!
+    let zoneChannel = FlutterMethodChannel(name: "health_journal/device_time_zone",
+      binaryMessenger: registrar.messenger())
+    zoneChannel.setMethodCallHandler { call, result in
+      guard call.method == "read" else { result(FlutterMethodNotImplemented); return }
+      result(TimeZone.autoupdatingCurrent.identifier)
+    }
     let channel = FlutterMethodChannel(name: "health_journal/private_store",
       binaryMessenger: registrar.messenger())
     channel.setMethodCallHandler { call, result in

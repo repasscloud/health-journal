@@ -52,6 +52,8 @@ CREATE TABLE medication_events (
   notes TEXT,
   corrects_id TEXT UNIQUE REFERENCES medication_events(id),
   correction_reason TEXT,
+  original_zone_label TEXT,
+  original_offset_minutes INTEGER CHECK (original_offset_minutes BETWEEN -1439 AND 1439),
   CHECK ((status = 'taken' AND taken_at IS NOT NULL) OR
          (status != 'taken' AND taken_at IS NULL)),
   CHECK ((legacy_medication_snapshot IS NOT NULL AND catalogue_snapshot IS NULL
@@ -106,8 +108,8 @@ CREATE TABLE medication_schedule_rules (
 CREATE TABLE measurements (
   id TEXT NOT NULL PRIMARY KEY,
   kind TEXT NOT NULL CHECK (kind IN ('weight','bloodPressure','heartRate','temperature','glucose','sleep')),
-  value REAL NOT NULL CHECK (value > 0 AND value <= 1.7976931348623157e308),
-  secondary REAL CHECK (secondary > 0 AND secondary <= 1.7976931348623157e308),
+  value REAL NOT NULL CHECK (value > 0 AND coalesce(value - value, 1) = 0),
+  secondary REAL CHECK (secondary IS NULL OR (secondary > 0 AND coalesce(secondary - secondary, 1) = 0)),
   measured_at INTEGER NOT NULL,
   recorded_at INTEGER NOT NULL,
   source TEXT NOT NULL DEFAULT 'manual' CHECK (source = 'manual'),
@@ -128,7 +130,8 @@ CREATE TABLE audit_events (
   record_type TEXT NOT NULL,
   record_id TEXT NOT NULL,
   action_code TEXT NOT NULL,
-  recorded_at INTEGER NOT NULL
+  recorded_at INTEGER NOT NULL,
+  snapshot TEXT
 );
 CREATE INDEX audit_events_record ON audit_events(record_type, record_id, recorded_at);
 

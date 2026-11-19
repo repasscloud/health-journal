@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -5,11 +7,26 @@ import '../../app/demo_notice.dart';
 import '../../app/journal_labels.dart';
 import '../../app/journal_theme.dart';
 import '../../domain/records.dart';
+import 'record_forms.dart';
 
-class SymptomDetail extends StatelessWidget {
-  const SymptomDetail({super.key, required this.entry});
+class SymptomDetail extends StatefulWidget {
+  const SymptomDetail({
+    super.key,
+    required this.entry,
+    this.onRevise,
+    this.history,
+  });
+  final FutureOr<void> Function(SymptomEntry)? onRevise;
+  final List<SymptomEntry> Function()? history;
 
   final SymptomEntry entry;
+
+  @override
+  State<SymptomDetail> createState() => _SymptomDetailState();
+}
+
+class _SymptomDetailState extends State<SymptomDetail> {
+  late SymptomEntry entry = widget.entry;
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +52,53 @@ class SymptomDetail extends StatelessWidget {
             if (entry.severity case final severity?)
               Text('Severity · $severity/10'),
             if (entry.notes.isNotEmpty) Text(entry.notes),
+            if (entry.category.isNotEmpty) Text('Category · ${entry.category}'),
+            if (entry.pattern case final pattern?) Text(journalLabel(pattern)),
+            if (entry.triggers.isNotEmpty) Text('Triggers · ${entry.triggers}'),
+            if (entry.relief.isNotEmpty)
+              Text('Relief measures · ${entry.relief}'),
+            if (entry.effect.isNotEmpty)
+              Text('Perceived effect · ${entry.effect}'),
+            if (widget.onRevise case final revise?)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: OutlinedButton(
+                  onPressed: () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => SymptomForm(
+                        previous: entry,
+                        onSave: (updated) async {
+                          await revise(updated);
+                          if (mounted) setState(() => entry = updated);
+                        },
+                      ),
+                    ),
+                  ),
+                  child: const Text('Edit symptom'),
+                ),
+              ),
+            if (widget.history?.call() case final versions?
+                when versions.isNotEmpty)
+              ExpansionTile(
+                title: const Text('Edit history'),
+                children: [
+                  for (final version in versions.reversed)
+                    ListTile(
+                      title: Text(version.title),
+                      subtitle: Text(
+                        'Saved ${journalDateTime(context, version.updatedAt)}',
+                      ),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () => Navigator.push<void>(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SymptomDetail(entry: version),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             if (groups.isNotEmpty) ...[
               const SizedBox(height: 24),
               Text(
@@ -97,6 +161,25 @@ class _SavedPainMap extends StatelessWidget {
                             'assets/bodymaps/$version/$view.svg',
                             key: ValueKey('saved-map-$version-$view'),
                           ),
+                          for (final (_, point) in points)
+                            if (point.radius case final radius?)
+                              Positioned(
+                                left: (point.x - radius) * bounds.maxWidth,
+                                top:
+                                    point.y * bounds.maxHeight -
+                                    radius * bounds.maxWidth,
+                                child: Container(
+                                  width: 2 * radius * bounds.maxWidth,
+                                  height: 2 * radius * bounds.maxWidth,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: journalSeverityColor(
+                                      point.severity,
+                                      Theme.of(context).brightness,
+                                    ).withValues(alpha: .3),
+                                  ),
+                                ),
+                              ),
                           for (final (number, point) in points)
                             Positioned(
                               left: point.x * bounds.maxWidth - 12,
@@ -139,7 +222,8 @@ class _SavedPainMap extends StatelessWidget {
                 label:
                     'Marker $number, ${journalLabel(view)} view, '
                     '${journalLabel(point.region)}, ${journalLabel(point.painType)}, '
-                    'severity ${point.severity} out of 10',
+                    'severity ${point.severity} out of 10'
+                    '${point.radius == null ? '' : ', area radius ${(point.radius! * 100).round()} percent of map width'}',
                 child: Text(
                   '$number. ${journalLabel(point.region)} · '
                   '${journalLabel(point.painType)} · ${point.severity}/10',

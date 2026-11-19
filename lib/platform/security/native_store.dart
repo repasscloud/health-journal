@@ -10,8 +10,7 @@ import 'encrypted_database.dart';
 import 'migration_snapshot.dart';
 import 'secure_installation_key_store.dart';
 
-/// Native-only composition for the protected database. Not exposed to record UI
-/// until the release and device security acceptance checks have passed.
+/// Native-only composition for the protected database.
 final class NativeStore {
   static const _channel = MethodChannel('health_journal/private_store');
 
@@ -45,7 +44,7 @@ final class NativeStore {
     return Directory(path);
   }
 
-  /// Explicit Start Fresh operation for the future gated native composition.
+  /// Explicit Start Fresh operation for the native composition.
   /// A retry returns the existing profile without replacing it.
   static Future<ProfileData> initializeProfile(JournalDatabase journal) =>
       journal.transaction(() async {
@@ -90,6 +89,7 @@ final class NativeStore {
         if (version != 0 &&
             version != 1 &&
             version != 2 &&
+            version != 3 &&
             version != JournalDatabase.currentSchemaVersion) {
           throw StateError('Unsupported schema. Existing records retained.');
         }

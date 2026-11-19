@@ -92,6 +92,7 @@ class _MedicationEditorState extends State<MedicationEditor> {
   late String strengthUnit = widget.previous?.strengthUnit ?? '';
   late bool archived = widget.previous?.archived ?? false;
   String? error;
+  bool saving = false;
   late final dates = <String, DateTime?>{
     'Started date': widget.previous?.startedAt,
     'Stopped date': widget.previous?.stoppedAt,
@@ -268,42 +269,53 @@ class _MedicationEditorState extends State<MedicationEditor> {
               const SizedBox(height: 16),
               if (error != null) Text(error!),
               FilledButton(
-                onPressed: () {
-                  if (!formKey.currentState!.validate()) return;
-                  try {
-                    final now = DateTime.now().toUtc();
-                    widget.repository.saveMedication(
-                      Medication(
-                        id: widget.previous?.id ?? const Uuid().v4(),
-                        name: value('Medication name'),
-                        strength: value('Product strength'),
-                        createdAt: widget.previous?.createdAt ?? now,
-                        updatedAt: now,
-                        genericName: value('Generic name'),
-                        brand: value('Brand'),
-                        form: dosageForm,
-                        strengthUnit: strengthUnit,
-                        instructions: value('Directions'),
-                        reason: value('Reason'),
-                        prescribedBy: value('Prescribed by'),
-                        notes: value('Notes'),
-                        archived: archived,
-                        startedAt: dates['Started date'],
-                        stoppedAt: dates['Stopped date'],
-                        pausedAt: dates['Paused date'],
-                      ),
-                    );
-                    widget.onChanged();
-                    Navigator.pop(context);
-                  } on ArgumentError {
-                    setState(
-                      () => error =
-                          'Check dates: stop and pause must follow start.',
-                    );
-                  } on StateError {
-                    setState(() => error = 'Could not save this medication.');
-                  }
-                },
+                onPressed: saving
+                    ? null
+                    : () async {
+                        if (!formKey.currentState!.validate()) return;
+                        setState(() => saving = true);
+                        try {
+                          final now = DateTime.now().toUtc();
+                          await widget.repository.saveMedication(
+                            Medication(
+                              id: widget.previous?.id ?? const Uuid().v4(),
+                              name: value('Medication name'),
+                              strength: value('Product strength'),
+                              createdAt: widget.previous?.createdAt ?? now,
+                              updatedAt: now,
+                              genericName: value('Generic name'),
+                              brand: value('Brand'),
+                              form: dosageForm,
+                              strengthUnit: strengthUnit,
+                              instructions: value('Directions'),
+                              reason: value('Reason'),
+                              prescribedBy: value('Prescribed by'),
+                              notes: value('Notes'),
+                              archived: archived,
+                              startedAt: dates['Started date'],
+                              stoppedAt: dates['Stopped date'],
+                              pausedAt: dates['Paused date'],
+                            ),
+                          );
+                          if (!mounted) return;
+                          widget.onChanged();
+                          if (ModalRoute.of(this.context)?.isCurrent == true) {
+                            Navigator.pop(this.context);
+                          }
+                        } on ArgumentError {
+                          if (!mounted) return;
+                          setState(() => saving = false);
+                          setState(
+                            () => error = 'Check dates: stop and pause must follow start.',
+                          );
+                        } catch (_) {
+                          if (!mounted) return;
+                          setState(() => saving = false);
+                          setState(
+                            () => error = 'Could not save this medication.',
+                          );
+                        }
+                      },
                 child: Text(
                   widget.previous == null ? 'Add' : 'Save medication',
                 ),

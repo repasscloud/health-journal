@@ -9,10 +9,13 @@ final class PainObservation {
     required this.severity,
     this.painType = 'aching',
     this.assetVersion = 'v1',
+    this.radius,
   }) {
     if (id.isEmpty ||
         !['front', 'back'].contains(view) ||
         bodyRegionAt(x, y, version: assetVersion, view: view) == null ||
+        (radius != null &&
+            (!radius!.isFinite || radius! <= 0 || radius! > 1)) ||
         severity < 0 ||
         severity > 10 ||
         ![
@@ -30,6 +33,7 @@ final class PainObservation {
   }
   final String id, view, painType, assetVersion;
   final double x, y;
+  final double? radius;
   final int severity;
   String get region => anatomicalRegion(
     bodyRegionAt(x, y, version: assetVersion, view: view)!,
@@ -51,13 +55,24 @@ final class SymptomEntry {
     this.endAt,
     this.severity,
     this.notes = '',
+    this.category = '',
+    this.triggers = '',
+    this.relief = '',
+    this.effect = '',
+    this.pattern,
+    DateTime? updatedAt,
     List<PainObservation> pain = const [],
   }) : title = title.trim(),
+       updatedAt = updatedAt ?? recordedAt,
        pain = List.unmodifiable(pain) {
     if (id.isEmpty ||
         this.title.isEmpty ||
         !onsetAt.isUtc ||
         !recordedAt.isUtc ||
+        !this.updatedAt.isUtc ||
+        this.updatedAt.isBefore(recordedAt) ||
+        (pattern != null &&
+            !['continuous', 'intermittent'].contains(pattern)) ||
         (endAt != null && (!endAt!.isUtc || endAt!.isBefore(onsetAt))) ||
         (severity != null && (severity! < 0 || severity! > 10)) ||
         pain.map((p) => p.id).toSet().length != pain.length) {
@@ -65,7 +80,9 @@ final class SymptomEntry {
     }
   }
   final String id, title, notes;
-  final DateTime onsetAt, recordedAt;
+  final DateTime onsetAt, recordedAt, updatedAt;
+  final String category, triggers, relief, effect;
+  final String? pattern;
   final DateTime? endAt;
   final int? severity;
   final List<PainObservation> pain;

@@ -514,3 +514,118 @@ Start Fresh or marking milestone 0 complete.
 Flutter tests, both Android release builds, the web release build and both
 Chrome Playwright reload/storage tests passed. Logs are in the ignored
 `build/foundation-v3/` directory.
+
+## 2026-11-19 — Milestone 1 independent implementation
+
+- **[#1](https://github.com/repasscloud/health-journal/issues/1) and [#2](https://github.com/repasscloud/health-journal/issues/2).**
+  Shared forms respect the bottom system inset. The symptom region selector
+  uses aligned, equal-width controls with row and column spacing, adapting
+  its column count to available width and text size. A widget test verifies
+  the save action is reachable above a simulated Android navigation inset
+  and saves a record with a selected region.
+- **[#16](https://github.com/repasscloud/health-journal/issues/16).** Isolated
+  encrypted adapters now write and reopen medication catalogue revisions,
+  effective-dated regimens and rules, explicit administrations, symptoms and
+  markers, and measurements. The host test verifies versioned history survives
+  reopen and a colliding marker replacement rolls back both current and audit
+  writes. These adapters are outside production app composition.
+- **[#17](https://github.com/repasscloud/health-journal/issues/17).** The
+  fictional regimen editor preserves per-time weekdays. Device-local slots
+  skip nonexistent clock times and use the earlier repeated minute. Stable
+  civil slot keys support explicit occurrence links and duplicate prevention
+  without inferring adherence. Today shows pending and explicitly recorded
+  states separately. Event details preserve the original platform timezone
+  identifier and UTC offset when available, with a device label fallback.
+- **[#18](https://github.com/repasscloud/health-journal/issues/18).** Symptom
+  details support audited edits, moving and resizing markers on their original
+  asset, onset/end timestamps, severity and structured context. Timeline
+  supports inclusive local date filters, 20-event pages and descriptive weekly
+  symptom counts. Tests cover moving a v1 marker, historic inspection and
+  pagination/date filtering.
+- **Schema.** Drift v4 adds administration timezone metadata and encrypted
+  audit snapshots. It repairs the generated v3 measurement check that rejected
+  all positive values. The exported v3 database is verified through encrypted
+  migration and a valid measurement write. [ADR 0007](docs/adr/0007-native-record-facts-and-audit-history.md)
+
+**Checks:** Formatting and analysis passed. All 67 Flutter tests passed.
+Web release and both Chrome Playwright storage/reset tests passed. Android
+production and fictional review release builds and unsigned iOS device release
+built. The iOS build is build evidence only. Logs are under the ignored
+`build/milestone-1/final/` directory.
+
+**Android runtime:** On the fresh `HJ_Milestone1_Disposable` API 35 arm64
+emulator with the fictional review release, the complete Save symptom button
+was above the system navigation area and saved an entry in both gesture and
+three-button modes. The three-button layout also showed two aligned region
+columns, 12-pixel gaps and 48-pixel button heights at the emulator's 1× density.
+Only the disposable emulator was used for installations.
+
+**Remaining acceptance:** Physical Android verification of the save action
+is still due. Production end-to-end record integration and supported-device
+restart and editing acceptance depend on Milestone 0 enabling Start Fresh
+after encrypted storage and credential-protection evidence on Android and iOS.
+Physical-device accessibility acceptance remains open. Android review remains
+fictional and process-local. Web remains fictional and resets on full reload.
+
+## 2026-11-19 — Physical Android acceptance
+
+Tested a USB-connected Samsung Galaxy A14 5G (SM-A146P, Android API 35,
+arm64) using release builds with local development signing. Scratch builds
+used separate probe and fictional review app IDs. The existing shared-ID
+installation was neither updated nor cleared.
+
+- The encrypted probe upgraded fictional Drift v1 to v4 and reused the
+  installation key after a force-stop and independent cold launch. It reopened
+  catalogue, regimen, administration/correction, symptom and marker, and
+  measurement records. Plain SQLite could not read the database. Active WAL,
+  the database and recovery snapshot contained no fictional sentinel plaintext.
+- Android reported file-based device encryption, enforcing SELinux, an
+  app-owned mode-0700 backup-excluded directory in credential-encrypted
+  storage, and one hardware-backed Keystore key for the probe. The wrapping
+  key did not require per-use authentication. The probe reopened the database
+  after Android reported the screen locked following first unlock. The probe
+  also reopened the same records after the owner unlocked the handset again.
+  An application access lock is a separate Milestone 2 feature.
+- The isolated fictional review saved a symptom in three-button navigation.
+  The entire save action ended at y=2183, above the navigation bar starting at
+  y=2273. Region controls aligned with equal widths and separate rows. A cold
+  restart restored the review fixture. The previous disposable-emulator
+  check also passed both navigation modes. A follow-up physical gesture-mode
+  run passed with the full button above the bar (y=2276 vs y=2366), successful
+  save, and a clean fictional fixture after cold restart. The original
+  three-button setting was restored. The temporary review installation was
+  removed.
+
+Logs and scratch APKs are under the ignored `build/android-device-acceptance/`
+directory. Android credential-change acceptance passed. Android verified a
+temporary PIN, and the release probe cold-started and reopened the encrypted
+journal with the existing hardware-backed key. The original PIN was restored
+and verified. A subsequent cold start reopened the same journal again.
+Credential values are excluded from the recorded evidence. The temporary
+probe installation was removed and the original Health Journal package and
+three-button navigation setting were verified unchanged.
+[Physical Android issue evidence](https://github.com/repasscloud/health-journal/issues/3#issuecomment-6998105752)
+
+## 2026-11-19 — Android production composition
+
+Android now runs the shared record UI against the encrypted store after
+explicit Start Fresh or reopen of the existing single profile. The platform
+gate uses the physical Android storage and credential evidence above plus
+host crash-recovery tests. iOS remains gated, and no Apple verification was
+run. See [ADR 0008](docs/adr/0008-android-production-composition.md).
+
+The host record test now exercises the UI repository boundary across
+encryption, concurrent-write serialization, reopen, history, and failed marker
+replacement. Format, analysis and all 67 Flutter tests passed. Web release and
+both Chrome demo acceptance checks passed.
+
+On the USB Galaxy A14 5G (Android 15/API 35), a release build using the isolated
+`com.repasscloud.healthjournal.devicetest` ID completed explicit Start Fresh,
+saved a fictional symptom with a torso marker and displayed it after
+force-stop and cold restart. The full Save symptom action ended at y=2183,
+above the system navigation bar at y=2273. The same device saved a manual
+weight, showed it in Timeline, and saved a symptom title revision with the
+original v2 map and edit history still available. Standard production and
+review release APKs built with local development signing. The original shared app ID was
+excluded from installation and data commands. Physical coverage of each
+record, large text, offline lifecycle, and full accessibility remains open.

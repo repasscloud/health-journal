@@ -2051,6 +2051,29 @@ class MedicationEvents extends Table
     requiredDuringInsert: false,
     $customConstraints: '',
   );
+  static const VerificationMeta _originalZoneLabelMeta = const VerificationMeta(
+    'originalZoneLabel',
+  );
+  late final GeneratedColumn<String> originalZoneLabel =
+      GeneratedColumn<String>(
+        'original_zone_label',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        $customConstraints: '',
+      );
+  static const VerificationMeta _originalOffsetMinutesMeta =
+      const VerificationMeta('originalOffsetMinutes');
+  late final GeneratedColumn<int> originalOffsetMinutes = GeneratedColumn<int>(
+    'original_offset_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    $customConstraints:
+        'CHECK (original_offset_minutes BETWEEN -1439 AND 1439)',
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -2070,6 +2093,8 @@ class MedicationEvents extends Table
     notes,
     correctsId,
     correctionReason,
+    originalZoneLabel,
+    originalOffsetMinutes,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -2212,6 +2237,24 @@ class MedicationEvents extends Table
         ),
       );
     }
+    if (data.containsKey('original_zone_label')) {
+      context.handle(
+        _originalZoneLabelMeta,
+        originalZoneLabel.isAcceptableOrUnknown(
+          data['original_zone_label']!,
+          _originalZoneLabelMeta,
+        ),
+      );
+    }
+    if (data.containsKey('original_offset_minutes')) {
+      context.handle(
+        _originalOffsetMinutesMeta,
+        originalOffsetMinutes.isAcceptableOrUnknown(
+          data['original_offset_minutes']!,
+          _originalOffsetMinutesMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -2289,6 +2332,14 @@ class MedicationEvents extends Table
         DriftSqlType.string,
         data['${effectivePrefix}correction_reason'],
       ),
+      originalZoneLabel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}original_zone_label'],
+      ),
+      originalOffsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}original_offset_minutes'],
+      ),
     );
   }
 
@@ -2325,6 +2376,8 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
   final String? notes;
   final String? correctsId;
   final String? correctionReason;
+  final String? originalZoneLabel;
+  final int? originalOffsetMinutes;
   const MedicationEvent({
     required this.id,
     required this.medicationId,
@@ -2343,6 +2396,8 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
     this.notes,
     this.correctsId,
     this.correctionReason,
+    this.originalZoneLabel,
+    this.originalOffsetMinutes,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -2388,6 +2443,12 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
     if (!nullToAbsent || correctionReason != null) {
       map['correction_reason'] = Variable<String>(correctionReason);
     }
+    if (!nullToAbsent || originalZoneLabel != null) {
+      map['original_zone_label'] = Variable<String>(originalZoneLabel);
+    }
+    if (!nullToAbsent || originalOffsetMinutes != null) {
+      map['original_offset_minutes'] = Variable<int>(originalOffsetMinutes);
+    }
     return map;
   }
 
@@ -2432,6 +2493,12 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
       correctionReason: correctionReason == null && nullToAbsent
           ? const Value.absent()
           : Value(correctionReason),
+      originalZoneLabel: originalZoneLabel == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalZoneLabel),
+      originalOffsetMinutes: originalOffsetMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(originalOffsetMinutes),
     );
   }
 
@@ -2462,6 +2529,12 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
       notes: serializer.fromJson<String?>(json['notes']),
       correctsId: serializer.fromJson<String?>(json['corrects_id']),
       correctionReason: serializer.fromJson<String?>(json['correction_reason']),
+      originalZoneLabel: serializer.fromJson<String?>(
+        json['original_zone_label'],
+      ),
+      originalOffsetMinutes: serializer.fromJson<int?>(
+        json['original_offset_minutes'],
+      ),
     );
   }
   @override
@@ -2487,6 +2560,8 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
       'notes': serializer.toJson<String?>(notes),
       'corrects_id': serializer.toJson<String?>(correctsId),
       'correction_reason': serializer.toJson<String?>(correctionReason),
+      'original_zone_label': serializer.toJson<String?>(originalZoneLabel),
+      'original_offset_minutes': serializer.toJson<int?>(originalOffsetMinutes),
     };
   }
 
@@ -2508,6 +2583,8 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
     Value<String?> notes = const Value.absent(),
     Value<String?> correctsId = const Value.absent(),
     Value<String?> correctionReason = const Value.absent(),
+    Value<String?> originalZoneLabel = const Value.absent(),
+    Value<int?> originalOffsetMinutes = const Value.absent(),
   }) => MedicationEvent(
     id: id ?? this.id,
     medicationId: medicationId ?? this.medicationId,
@@ -2536,6 +2613,12 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
     correctionReason: correctionReason.present
         ? correctionReason.value
         : this.correctionReason,
+    originalZoneLabel: originalZoneLabel.present
+        ? originalZoneLabel.value
+        : this.originalZoneLabel,
+    originalOffsetMinutes: originalOffsetMinutes.present
+        ? originalOffsetMinutes.value
+        : this.originalOffsetMinutes,
   );
   MedicationEvent copyWithCompanion(MedicationEventsCompanion data) {
     return MedicationEvent(
@@ -2576,6 +2659,12 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
       correctionReason: data.correctionReason.present
           ? data.correctionReason.value
           : this.correctionReason,
+      originalZoneLabel: data.originalZoneLabel.present
+          ? data.originalZoneLabel.value
+          : this.originalZoneLabel,
+      originalOffsetMinutes: data.originalOffsetMinutes.present
+          ? data.originalOffsetMinutes.value
+          : this.originalOffsetMinutes,
     );
   }
 
@@ -2598,7 +2687,9 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
           ..write('regimenSnapshot: $regimenSnapshot, ')
           ..write('notes: $notes, ')
           ..write('correctsId: $correctsId, ')
-          ..write('correctionReason: $correctionReason')
+          ..write('correctionReason: $correctionReason, ')
+          ..write('originalZoneLabel: $originalZoneLabel, ')
+          ..write('originalOffsetMinutes: $originalOffsetMinutes')
           ..write(')'))
         .toString();
   }
@@ -2622,6 +2713,8 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
     notes,
     correctsId,
     correctionReason,
+    originalZoneLabel,
+    originalOffsetMinutes,
   );
   @override
   bool operator ==(Object other) =>
@@ -2643,7 +2736,9 @@ class MedicationEvent extends DataClass implements Insertable<MedicationEvent> {
           other.regimenSnapshot == this.regimenSnapshot &&
           other.notes == this.notes &&
           other.correctsId == this.correctsId &&
-          other.correctionReason == this.correctionReason);
+          other.correctionReason == this.correctionReason &&
+          other.originalZoneLabel == this.originalZoneLabel &&
+          other.originalOffsetMinutes == this.originalOffsetMinutes);
 }
 
 class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
@@ -2664,6 +2759,8 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
   final Value<String?> notes;
   final Value<String?> correctsId;
   final Value<String?> correctionReason;
+  final Value<String?> originalZoneLabel;
+  final Value<int?> originalOffsetMinutes;
   final Value<int> rowid;
   const MedicationEventsCompanion({
     this.id = const Value.absent(),
@@ -2683,6 +2780,8 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
     this.notes = const Value.absent(),
     this.correctsId = const Value.absent(),
     this.correctionReason = const Value.absent(),
+    this.originalZoneLabel = const Value.absent(),
+    this.originalOffsetMinutes = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   MedicationEventsCompanion.insert({
@@ -2703,6 +2802,8 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
     this.notes = const Value.absent(),
     this.correctsId = const Value.absent(),
     this.correctionReason = const Value.absent(),
+    this.originalZoneLabel = const Value.absent(),
+    this.originalOffsetMinutes = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        medicationId = Value(medicationId),
@@ -2728,6 +2829,8 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
     Expression<String>? notes,
     Expression<String>? correctsId,
     Expression<String>? correctionReason,
+    Expression<String>? originalZoneLabel,
+    Expression<int>? originalOffsetMinutes,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -2749,6 +2852,9 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
       if (notes != null) 'notes': notes,
       if (correctsId != null) 'corrects_id': correctsId,
       if (correctionReason != null) 'correction_reason': correctionReason,
+      if (originalZoneLabel != null) 'original_zone_label': originalZoneLabel,
+      if (originalOffsetMinutes != null)
+        'original_offset_minutes': originalOffsetMinutes,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -2771,6 +2877,8 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
     Value<String?>? notes,
     Value<String?>? correctsId,
     Value<String?>? correctionReason,
+    Value<String?>? originalZoneLabel,
+    Value<int?>? originalOffsetMinutes,
     Value<int>? rowid,
   }) {
     return MedicationEventsCompanion(
@@ -2792,6 +2900,9 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
       notes: notes ?? this.notes,
       correctsId: correctsId ?? this.correctsId,
       correctionReason: correctionReason ?? this.correctionReason,
+      originalZoneLabel: originalZoneLabel ?? this.originalZoneLabel,
+      originalOffsetMinutes:
+          originalOffsetMinutes ?? this.originalOffsetMinutes,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2852,6 +2963,14 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
     if (correctionReason.present) {
       map['correction_reason'] = Variable<String>(correctionReason.value);
     }
+    if (originalZoneLabel.present) {
+      map['original_zone_label'] = Variable<String>(originalZoneLabel.value);
+    }
+    if (originalOffsetMinutes.present) {
+      map['original_offset_minutes'] = Variable<int>(
+        originalOffsetMinutes.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2878,6 +2997,8 @@ class MedicationEventsCompanion extends UpdateCompanion<MedicationEvent> {
           ..write('notes: $notes, ')
           ..write('correctsId: $correctsId, ')
           ..write('correctionReason: $correctionReason, ')
+          ..write('originalZoneLabel: $originalZoneLabel, ')
+          ..write('originalOffsetMinutes: $originalOffsetMinutes, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4670,7 +4791,8 @@ class Measurements extends Table with TableInfo<Measurements, Measurement> {
     false,
     type: DriftSqlType.double,
     requiredDuringInsert: true,
-    $customConstraints: 'NOT NULL CHECK (value > 0 AND value <= 0.0)',
+    $customConstraints:
+        'NOT NULL CHECK (value > 0 AND coalesce(value - value, 1) = 0)',
   );
   static const VerificationMeta _secondaryMeta = const VerificationMeta(
     'secondary',
@@ -4681,7 +4803,7 @@ class Measurements extends Table with TableInfo<Measurements, Measurement> {
     true,
     type: DriftSqlType.double,
     requiredDuringInsert: false,
-    $customConstraints: 'CHECK (secondary > 0 AND secondary <= 0.0)',
+    $customConstraints: 'CHECK (secondary IS NULL OR(secondary > 0 AND coalesce(secondary - secondary, 1) = 0))',
   );
   static const VerificationMeta _measuredAtMeta = const VerificationMeta(
     'measuredAt',
@@ -5473,6 +5595,17 @@ class AuditEvents extends Table with TableInfo<AuditEvents, AuditEvent> {
     requiredDuringInsert: true,
     $customConstraints: 'NOT NULL',
   );
+  static const VerificationMeta _snapshotMeta = const VerificationMeta(
+    'snapshot',
+  );
+  late final GeneratedColumn<String> snapshot = GeneratedColumn<String>(
+    'snapshot',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    $customConstraints: '',
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -5480,6 +5613,7 @@ class AuditEvents extends Table with TableInfo<AuditEvents, AuditEvent> {
     recordId,
     actionCode,
     recordedAt,
+    snapshot,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -5530,6 +5664,12 @@ class AuditEvents extends Table with TableInfo<AuditEvents, AuditEvent> {
     } else if (isInserting) {
       context.missing(_recordedAtMeta);
     }
+    if (data.containsKey('snapshot')) {
+      context.handle(
+        _snapshotMeta,
+        snapshot.isAcceptableOrUnknown(data['snapshot']!, _snapshotMeta),
+      );
+    }
     return context;
   }
 
@@ -5559,6 +5699,10 @@ class AuditEvents extends Table with TableInfo<AuditEvents, AuditEvent> {
         DriftSqlType.int,
         data['${effectivePrefix}recorded_at'],
       )!,
+      snapshot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}snapshot'],
+      ),
     );
   }
 
@@ -5577,12 +5721,14 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
   final String recordId;
   final String actionCode;
   final int recordedAt;
+  final String? snapshot;
   const AuditEvent({
     required this.id,
     required this.recordType,
     required this.recordId,
     required this.actionCode,
     required this.recordedAt,
+    this.snapshot,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -5592,6 +5738,9 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
     map['record_id'] = Variable<String>(recordId);
     map['action_code'] = Variable<String>(actionCode);
     map['recorded_at'] = Variable<int>(recordedAt);
+    if (!nullToAbsent || snapshot != null) {
+      map['snapshot'] = Variable<String>(snapshot);
+    }
     return map;
   }
 
@@ -5602,6 +5751,9 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
       recordId: Value(recordId),
       actionCode: Value(actionCode),
       recordedAt: Value(recordedAt),
+      snapshot: snapshot == null && nullToAbsent
+          ? const Value.absent()
+          : Value(snapshot),
     );
   }
 
@@ -5616,6 +5768,7 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
       recordId: serializer.fromJson<String>(json['record_id']),
       actionCode: serializer.fromJson<String>(json['action_code']),
       recordedAt: serializer.fromJson<int>(json['recorded_at']),
+      snapshot: serializer.fromJson<String?>(json['snapshot']),
     );
   }
   @override
@@ -5627,6 +5780,7 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
       'record_id': serializer.toJson<String>(recordId),
       'action_code': serializer.toJson<String>(actionCode),
       'recorded_at': serializer.toJson<int>(recordedAt),
+      'snapshot': serializer.toJson<String?>(snapshot),
     };
   }
 
@@ -5636,12 +5790,14 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
     String? recordId,
     String? actionCode,
     int? recordedAt,
+    Value<String?> snapshot = const Value.absent(),
   }) => AuditEvent(
     id: id ?? this.id,
     recordType: recordType ?? this.recordType,
     recordId: recordId ?? this.recordId,
     actionCode: actionCode ?? this.actionCode,
     recordedAt: recordedAt ?? this.recordedAt,
+    snapshot: snapshot.present ? snapshot.value : this.snapshot,
   );
   AuditEvent copyWithCompanion(AuditEventsCompanion data) {
     return AuditEvent(
@@ -5656,6 +5812,7 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
       recordedAt: data.recordedAt.present
           ? data.recordedAt.value
           : this.recordedAt,
+      snapshot: data.snapshot.present ? data.snapshot.value : this.snapshot,
     );
   }
 
@@ -5666,14 +5823,15 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
           ..write('recordType: $recordType, ')
           ..write('recordId: $recordId, ')
           ..write('actionCode: $actionCode, ')
-          ..write('recordedAt: $recordedAt')
+          ..write('recordedAt: $recordedAt, ')
+          ..write('snapshot: $snapshot')
           ..write(')'))
         .toString();
   }
 
   @override
   int get hashCode =>
-      Object.hash(id, recordType, recordId, actionCode, recordedAt);
+      Object.hash(id, recordType, recordId, actionCode, recordedAt, snapshot);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5682,7 +5840,8 @@ class AuditEvent extends DataClass implements Insertable<AuditEvent> {
           other.recordType == this.recordType &&
           other.recordId == this.recordId &&
           other.actionCode == this.actionCode &&
-          other.recordedAt == this.recordedAt);
+          other.recordedAt == this.recordedAt &&
+          other.snapshot == this.snapshot);
 }
 
 class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
@@ -5691,6 +5850,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
   final Value<String> recordId;
   final Value<String> actionCode;
   final Value<int> recordedAt;
+  final Value<String?> snapshot;
   final Value<int> rowid;
   const AuditEventsCompanion({
     this.id = const Value.absent(),
@@ -5698,6 +5858,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
     this.recordId = const Value.absent(),
     this.actionCode = const Value.absent(),
     this.recordedAt = const Value.absent(),
+    this.snapshot = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AuditEventsCompanion.insert({
@@ -5706,6 +5867,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
     required String recordId,
     required String actionCode,
     required int recordedAt,
+    this.snapshot = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        recordType = Value(recordType),
@@ -5718,6 +5880,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
     Expression<String>? recordId,
     Expression<String>? actionCode,
     Expression<int>? recordedAt,
+    Expression<String>? snapshot,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5726,6 +5889,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
       if (recordId != null) 'record_id': recordId,
       if (actionCode != null) 'action_code': actionCode,
       if (recordedAt != null) 'recorded_at': recordedAt,
+      if (snapshot != null) 'snapshot': snapshot,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5736,6 +5900,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
     Value<String>? recordId,
     Value<String>? actionCode,
     Value<int>? recordedAt,
+    Value<String?>? snapshot,
     Value<int>? rowid,
   }) {
     return AuditEventsCompanion(
@@ -5744,6 +5909,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
       recordId: recordId ?? this.recordId,
       actionCode: actionCode ?? this.actionCode,
       recordedAt: recordedAt ?? this.recordedAt,
+      snapshot: snapshot ?? this.snapshot,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5766,6 +5932,9 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
     if (recordedAt.present) {
       map['recorded_at'] = Variable<int>(recordedAt.value);
     }
+    if (snapshot.present) {
+      map['snapshot'] = Variable<String>(snapshot.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5780,6 +5949,7 @@ class AuditEventsCompanion extends UpdateCompanion<AuditEvent> {
           ..write('recordId: $recordId, ')
           ..write('actionCode: $actionCode, ')
           ..write('recordedAt: $recordedAt, ')
+          ..write('snapshot: $snapshot, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -7881,6 +8051,8 @@ typedef $MedicationEventsCreateCompanionBuilder =
       Value<String?> notes,
       Value<String?> correctsId,
       Value<String?> correctionReason,
+      Value<String?> originalZoneLabel,
+      Value<int?> originalOffsetMinutes,
       Value<int> rowid,
     });
 typedef $MedicationEventsUpdateCompanionBuilder =
@@ -7902,6 +8074,8 @@ typedef $MedicationEventsUpdateCompanionBuilder =
       Value<String?> notes,
       Value<String?> correctsId,
       Value<String?> correctionReason,
+      Value<String?> originalZoneLabel,
+      Value<int?> originalOffsetMinutes,
       Value<int> rowid,
     });
 
@@ -8040,6 +8214,16 @@ class $MedicationEventsFilterComposer
 
   ColumnFilters<String> get correctionReason => $composableBuilder(
     column: $table.correctionReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get originalZoneLabel => $composableBuilder(
+    column: $table.originalZoneLabel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get originalOffsetMinutes => $composableBuilder(
+    column: $table.originalOffsetMinutes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -8192,6 +8376,16 @@ class $MedicationEventsOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get originalZoneLabel => $composableBuilder(
+    column: $table.originalZoneLabel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get originalOffsetMinutes => $composableBuilder(
+    column: $table.originalOffsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $MedicationsOrderingComposer get medicationId {
     final $MedicationsOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -8329,6 +8523,16 @@ class $MedicationEventsAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get originalZoneLabel => $composableBuilder(
+    column: $table.originalZoneLabel,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get originalOffsetMinutes => $composableBuilder(
+    column: $table.originalOffsetMinutes,
+    builder: (column) => column,
+  );
+
   $MedicationsAnnotationComposer get medicationId {
     final $MedicationsAnnotationComposer composer = $composerBuilder(
       composer: this,
@@ -8448,6 +8652,8 @@ class $MedicationEventsTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<String?> correctsId = const Value.absent(),
                 Value<String?> correctionReason = const Value.absent(),
+                Value<String?> originalZoneLabel = const Value.absent(),
+                Value<int?> originalOffsetMinutes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MedicationEventsCompanion(
                 id: id,
@@ -8467,6 +8673,8 @@ class $MedicationEventsTableManager
                 notes: notes,
                 correctsId: correctsId,
                 correctionReason: correctionReason,
+                originalZoneLabel: originalZoneLabel,
+                originalOffsetMinutes: originalOffsetMinutes,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -8488,6 +8696,8 @@ class $MedicationEventsTableManager
                 Value<String?> notes = const Value.absent(),
                 Value<String?> correctsId = const Value.absent(),
                 Value<String?> correctionReason = const Value.absent(),
+                Value<String?> originalZoneLabel = const Value.absent(),
+                Value<int?> originalOffsetMinutes = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => MedicationEventsCompanion.insert(
                 id: id,
@@ -8507,6 +8717,8 @@ class $MedicationEventsTableManager
                 notes: notes,
                 correctsId: correctsId,
                 correctionReason: correctionReason,
+                originalZoneLabel: originalZoneLabel,
+                originalOffsetMinutes: originalOffsetMinutes,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -10351,6 +10563,7 @@ typedef $AuditEventsCreateCompanionBuilder = AuditEventsCompanion Function({
   required String recordId,
   required String actionCode,
   required int recordedAt,
+  Value<String?> snapshot,
   Value<int> rowid,
 });
 typedef $AuditEventsUpdateCompanionBuilder = AuditEventsCompanion Function({
@@ -10359,6 +10572,7 @@ typedef $AuditEventsUpdateCompanionBuilder = AuditEventsCompanion Function({
   Value<String> recordId,
   Value<String> actionCode,
   Value<int> recordedAt,
+  Value<String?> snapshot,
   Value<int> rowid,
 });
 
@@ -10393,6 +10607,11 @@ class $AuditEventsFilterComposer
 
   ColumnFilters<int> get recordedAt => $composableBuilder(
     column: $table.recordedAt,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get snapshot => $composableBuilder(
+    column: $table.snapshot,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -10430,6 +10649,11 @@ class $AuditEventsOrderingComposer
     column: $table.recordedAt,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get snapshot => $composableBuilder(
+    column: $table.snapshot,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $AuditEventsAnnotationComposer
@@ -10461,6 +10685,9 @@ class $AuditEventsAnnotationComposer
     column: $table.recordedAt,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get snapshot =>
+      $composableBuilder(column: $table.snapshot, builder: (column) => column);
 }
 
 class $AuditEventsTableManager
@@ -10499,6 +10726,7 @@ class $AuditEventsTableManager
                 Value<String> recordId = const Value.absent(),
                 Value<String> actionCode = const Value.absent(),
                 Value<int> recordedAt = const Value.absent(),
+                Value<String?> snapshot = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AuditEventsCompanion(
                 id: id,
@@ -10506,6 +10734,7 @@ class $AuditEventsTableManager
                 recordId: recordId,
                 actionCode: actionCode,
                 recordedAt: recordedAt,
+                snapshot: snapshot,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -10515,6 +10744,7 @@ class $AuditEventsTableManager
                 required String recordId,
                 required String actionCode,
                 required int recordedAt,
+                Value<String?> snapshot = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AuditEventsCompanion.insert(
                 id: id,
@@ -10522,6 +10752,7 @@ class $AuditEventsTableManager
                 recordId: recordId,
                 actionCode: actionCode,
                 recordedAt: recordedAt,
+                snapshot: snapshot,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0

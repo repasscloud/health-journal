@@ -4,6 +4,10 @@
 
 ### Added
 
+- Enabled encrypted single-profile record entry in Android production.
+- Added medication revisions, explicit scheduled-dose linkage, symptom edit
+  history, and Timeline date filtering and pagination.
+
 - Added illustrated front and back body maps for symptom entry, with distinct
   anatomical landmarks for each view.
 - Added a dedicated grayscale Hj branding asset for the in-app header.

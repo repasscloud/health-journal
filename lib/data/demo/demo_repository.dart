@@ -3,6 +3,7 @@ import '../../domain/medication.dart';
 import '../../domain/regimen.dart';
 import '../../domain/records.dart';
 import '../repositories/journal_repository.dart';
+import '../repositories/journal_timeline.dart';
 
 /// One fresh, volatile fixture per boot. No storage or native service imports.
 final class DemoRepository implements JournalRepository {
@@ -157,6 +158,7 @@ final class DemoRepository implements JournalRepository {
   }
 
   final List<SymptomEntry> _symptoms = [];
+  final List<SymptomEntry> _symptomHistory = [];
   final List<Measurement> _measurements = [];
   @override
   List<SymptomEntry> get symptoms => List.unmodifiable(_symptoms);
@@ -171,6 +173,23 @@ final class DemoRepository implements JournalRepository {
   }
 
   @override
+  List<SymptomEntry> symptomHistory(String id) =>
+      List.unmodifiable(_symptomHistory.where((entry) => entry.id == id));
+
+  @override
+  void reviseSymptom(SymptomEntry symptom) {
+    final index = _symptoms.indexWhere((entry) => entry.id == symptom.id);
+    if (index < 0) throw StateError('Symptom could not be found.');
+    final previous = _symptoms[index];
+    if (symptom.recordedAt != previous.recordedAt ||
+        !symptom.updatedAt.isAfter(previous.updatedAt)) {
+      throw StateError('Symptom revision dates are invalid.');
+    }
+    _symptomHistory.add(previous);
+    _symptoms[index] = symptom;
+  }
+
+  @override
   void addMeasurement(Measurement measurement) {
     if (_measurements.any((m) => m.id == measurement.id)) {
       throw StateError('Duplicate measurement.');
@@ -179,50 +198,14 @@ final class DemoRepository implements JournalRepository {
   }
 
   @override
-  List<TimelineItem> timeline({String search = ''}) {
-    final items =
-        [
-              for (final e in _administrations)
-                TimelineItem(
-                  e.id,
-                  e.occurredAt,
-                  'medication',
-                  '${e.medicationNameSnapshot} • ${e.status.name} • ${e.amount} ${e.unit}${_administrations.any((c) => c.correctsId == e.id) ? ' • superseded' : ''}${e.correctsId != null ? ' • correction' : ''}',
-                ),
-              for (final r in _regimens)
-                TimelineItem(
-                  r.id,
-                  r.effectiveFrom,
-                  'schedule',
-                  '${_regimenNames[r.id]} • ${r.kind.name} • ${r.amount} ${r.unit} • unconfirmed',
-                ),
-              for (final s in _symptoms)
-                TimelineItem(
-                  s.id,
-                  s.onsetAt,
-                  'symptom',
-                  '${s.title} • ${s.notes} • ${s.pain.map((p) => '${p.view} ${p.region} ${p.severity}/10').join(', ')}',
-                ),
-              for (final m in _measurements)
-                TimelineItem(
-                  m.id,
-                  m.measuredAt,
-                  'measurement',
-                  '${m.display} • manual',
-                ),
-            ]
-            .where(
-              (i) => '${i.type} ${i.text}'.toLowerCase().contains(
-                search.trim().toLowerCase(),
-              ),
-            )
-            .toList();
-    items.sort((a, b) {
-      final order = b.at.compareTo(a.at);
-      return order == 0 ? a.id.compareTo(b.id) : order;
-    });
-    return List.unmodifiable(items);
-  }
+  List<TimelineItem> timeline({String search = ''}) => journalTimeline(
+    administrations: _administrations,
+    regimens: _regimens,
+    regimenName: (regimen) => _regimenNames[regimen.id]!,
+    symptoms: _symptoms,
+    measurements: _measurements,
+    search: search,
+  );
 
   final List<Medication> _medications = [];
   final List<Medication> _medicationHistory = [];
@@ -313,6 +296,13 @@ final class DemoRepository implements JournalRepository {
         )) {
       throw StateError('Regimen is unavailable at the event time.');
     }
+    if (event.correctsId == null &&
+        event.occurrenceKey != null &&
+        _administrations.any(
+          (other) => other.occurrenceKey == event.occurrenceKey,
+        )) {
+      throw StateError('This scheduled occurrence already has an entry.');
+    }
     if (event.correctsId != null) {
       final originals = _administrations.where((e) => e.id == event.correctsId);
       if (originals.isEmpty ||
@@ -321,6 +311,8 @@ final class DemoRepository implements JournalRepository {
       }
       final original = originals.single;
       if (event.medicationId != original.medicationId ||
+          event.occurrenceKey != original.occurrenceKey ||
+          event.intendedAt != original.intendedAt ||
           event.medicationNameSnapshot != original.medicationNameSnapshot ||
           _catalogueValue(event.medicationSnapshot) !=
               _catalogueValue(original.medicationSnapshot) ||

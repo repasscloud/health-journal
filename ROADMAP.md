@@ -5,8 +5,11 @@ Updated 19 November 2026. This roadmap follows the five milestones in the
 [implementation status](IMPLEMENTATION_STATUS.md) for build and test evidence.
 
 **Current position.** Foundation and record workflows are in progress. The
-fictional Android review and web demo can be used today. Encrypted recovery and the v3 schema have host acceptance coverage. The
-Android emulator has passed the encrypted medication upgrade and restart. Native personal record entry remains gated.
+fictional Android review and web demo can be used today. Encrypted recovery
+and Drift v4 have host acceptance coverage. Android emulator tests cover
+the encrypted medication upgrade through v3 and the Milestone 1 symptom
+form. Android production now opens the encrypted journal. iOS personal
+record entry remains gated.
 
 ## 0. Foundation and encrypted storage
 
@@ -32,6 +35,12 @@ Android emulator has passed the encrypted medication upgrade and restart. Native
 - [ ] Connect Start Fresh to production after mobile storage and recovery
   security acceptance. Physical Android acceptance includes hardware-backed
   key behaviour, locked-device behaviour and changes to the unlock credential.
+  The Samsung release probe verified a hardware-backed key, protected storage,
+  restart after upgrade, and reopen during screen lock and after unlock.
+  The same records reopened after a device credential change and again after
+  restoring the original credential.
+  Android production Start Fresh and encrypted cold restart passed on the
+  same handset under the isolated test ID. iOS remains deferred.
   [#5](https://github.com/repasscloud/health-journal/issues/5), [#3](https://github.com/repasscloud/health-journal/issues/3)
 
 
@@ -49,20 +58,31 @@ The web demo remains fictional and volatile.
 - [ ] Wire catalogue, regimens, administrations, symptoms, pain markers and
   measurements to the encrypted native repository. Complete restart tests for
   each record type, including history after edits and corrections.
+  The Android production UI uses the encrypted repository. Host tests
+  exercise every supported record type. The physical restart matrix remains
+  open beyond the smoke checks in the implementation status.
   [#16](https://github.com/repasscloud/health-journal/issues/16)
 - [ ] Complete schedule rule editing, occurrence linkage, original event
   timezone/offset and daylight-saving behaviour. Keep schedules independent
   of explicitly confirmed administration status.
+  The shared editor and device-local occurrence rules are available in
+  Android production. Host restart tests cover occurrence and timezone
+  metadata. Full physical schedule and travel acceptance remains open.
   [#17](https://github.com/repasscloud/health-journal/issues/17)
 - [ ] Complete symptom editing and audit history, marker movement and areas,
   richer symptom metadata, and Timeline date filtering, pagination and
   descriptive trends.
+  Fictional editing, marker movement and areas, history, filtering, pagination
+  and weekly counts are implemented. Encrypted history is host-tested.
+  Mobile production round-trip and accessibility acceptance remain open.
   [#18](https://github.com/repasscloud/health-journal/issues/18)
-- [ ] Fix and verify the Android **Save symptom** button overlap with system
+- [x] Fix and verify the Android **Save symptom** button overlap with system
   navigation. Cover three-button and gesture navigation alongside larger text.
   [Review screenshot](docs/test_results/20261119_104903-save-sympton-button-hidden-behind-android-overlay-buttons.png)
+  Widget and Android 35 emulator checks passed in both navigation modes.
+  The Samsung release review passed in both physical navigation modes.
   [#1](https://github.com/repasscloud/health-journal/issues/1)
-- [ ] Improve body-region button spacing and alignment on the symptom form.
+- [x] Improve body-region button spacing and alignment on the symptom form.
   Verify the layout at narrow widths and larger text sizes.
   [#2](https://github.com/repasscloud/health-journal/issues/2)
 

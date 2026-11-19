@@ -56,8 +56,9 @@ Final product name, bundle IDs/package IDs, brand assets, privacy-policy URL, su
 
 See [ROADMAP.md](ROADMAP.md) for the remaining milestones,
 [IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verification, and
-[CHANGELOG.md](CHANGELOG.md) for changes. Native
-record entry is currently gated pending release encryption verification on both targets.
+[CHANGELOG.md](CHANGELOG.md) for changes. Android
+production opens the encrypted journal after platform-specific security verification.
+iOS personal record entry remains gated pending physical-device verification.
 The web app is always a volatile fictional demo; no environment flag enables production
 web records. Reloading or opening a new tab constructs a new fixture.
 
@@ -147,7 +148,20 @@ Review medications/catalogue history, completed courses, explicit status/correct
 symptom front/back region entry, measurements and timeline search (`correction`,
 `ache`, `weight`). Scheduled entries remain unconfirmed. Device storage/keys,
 notifications, lock, reports, backup/restore and health import are unavailable.
-Production remains gated pending physical-iPhone release/security verification.
+iOS production remains gated pending physical-iPhone release/security verification.
 For Android production builds and the dedicated fictional security probes, append
 `--flavor production`; do not run probes over any personal-data installation.
-See ADR 0003 for composition boundaries and known snapshot-contract limitations.
+See ADR 0003 for review composition boundaries and known snapshot-contract limitations.
+
+To test the Android production flow with fictional records alongside an existing
+installation, build with an isolated application ID:
+
+```sh
+ORG_GRADLE_PROJECT_healthJournalDeviceTest=true flutter build apk --release --flavor production
+```
+
+Inspect the APK manifest and confirm its application ID is
+`com.repasscloud.healthjournal.devicetest` and is absent on the selected device
+before installing. Copy it out of the standard build directory before building
+the normal production APK. Android keeps this installation's database and
+Keystore key separate from the standard package.

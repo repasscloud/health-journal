@@ -1,0 +1,1523 @@
+{
+  "_meta": {
+    "description": "This file contains a serialized version of schema entities for drift.",
+    "version": "1.3.0"
+  },
+  "options": {
+    "store_date_time_values_as_text": false
+  },
+  "entities": [
+    {
+      "id": 0,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "profile",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "singleton",
+            "getter_name": "singleton",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (singleton = 1)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "date_of_birth",
+            "getter_name": "dateOfBirth",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 1,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "medications",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "name",
+            "getter_name": "name",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(name)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "strength",
+            "getter_name": "strength",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "archived",
+            "getter_name": "archived",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT 0 CHECK (archived IN (0, 1))",
+            "default_dart": "const CustomExpression('0')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "created_at",
+            "getter_name": "createdAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "generic_name",
+            "getter_name": "genericName",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "brand",
+            "getter_name": "brand",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "form",
+            "getter_name": "form",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "strength_unit",
+            "getter_name": "strengthUnit",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "instructions",
+            "getter_name": "instructions",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "reason",
+            "getter_name": "reason",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "prescribed_by",
+            "getter_name": "prescribedBy",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "notes",
+            "getter_name": "notes",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "started_at",
+            "getter_name": "startedAt",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "stopped_at",
+            "getter_name": "stoppedAt",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (stopped_at >= started_at)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "paused_at",
+            "getter_name": "pausedAt",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (paused_at >= started_at)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 2,
+      "references": [
+        1
+      ],
+      "type": "table",
+      "data": {
+        "name": "medication_regimens",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "medication_id",
+            "getter_name": "medicationId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES medications(id)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "medications",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "amount",
+            "getter_name": "amount",
+            "moor_type": "double",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (amount > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "unit",
+            "getter_name": "unit",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(unit)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "kind",
+            "getter_name": "kind",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (kind IN ('fixed', 'prn', 'course'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "effective_from",
+            "getter_name": "effectiveFrom",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "effective_to",
+            "getter_name": "effectiveTo",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (effective_to >= effective_from)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "instructions_snapshot",
+            "getter_name": "instructionsSnapshot",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "zone_policy",
+            "getter_name": "zonePolicy",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "CHECK (zone_policy = 'deviceLocal')",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "reminder_enabled",
+            "getter_name": "reminderEnabled",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (reminder_enabled IN (0, 1))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 3,
+      "references": [
+        1,
+        2
+      ],
+      "type": "table",
+      "data": {
+        "name": "medication_events",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "medication_id",
+            "getter_name": "medicationId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES medications(id)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "medications",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "regimen_id",
+            "getter_name": "regimenId",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "REFERENCES medication_regimens(id)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "medication_regimens",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "occurrence_key",
+            "getter_name": "occurrenceKey",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "status",
+            "getter_name": "status",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (status IN ('taken', 'skipped', 'missed', 'unknown'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "intended_at",
+            "getter_name": "intendedAt",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "taken_at",
+            "getter_name": "takenAt",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "recorded_at",
+            "getter_name": "recordedAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "occurred_at",
+            "getter_name": "occurredAt",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "amount",
+            "getter_name": "amount",
+            "moor_type": "double",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (amount > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "unit",
+            "getter_name": "unit",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(unit)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "legacy_medication_snapshot",
+            "getter_name": "legacyMedicationSnapshot",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "catalogue_snapshot",
+            "getter_name": "catalogueSnapshot",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "regimen_snapshot",
+            "getter_name": "regimenSnapshot",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "notes",
+            "getter_name": "notes",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "corrects_id",
+            "getter_name": "correctsId",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "UNIQUE REFERENCES medication_events(id)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "unique",
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "medication_events",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "correction_reason",
+            "getter_name": "correctionReason",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK((status = 'taken' AND taken_at IS NOT NULL)OR(status != 'taken' AND taken_at IS NULL))",
+          "CHECK((legacy_medication_snapshot IS NOT NULL AND catalogue_snapshot IS NULL AND regimen_snapshot IS NULL AND notes IS NULL AND corrects_id IS NULL)OR(legacy_medication_snapshot IS NULL AND catalogue_snapshot IS NOT NULL AND occurred_at IS NOT NULL AND occurred_at <= recorded_at AND(taken_at IS NULL OR taken_at = occurred_at)AND((regimen_id IS NULL)=(regimen_snapshot IS NULL))))",
+          "CHECK((corrects_id IS NULL AND correction_reason IS NULL)OR(corrects_id IS NOT NULL AND corrects_id != id AND correction_reason IS NOT NULL AND length(trim(correction_reason)) > 0))"
+        ]
+      }
+    },
+    {
+      "id": 4,
+      "references": [
+        3
+      ],
+      "type": "index",
+      "data": {
+        "on": 3,
+        "name": "medication_events_time",
+        "sql": "CREATE INDEX medication_events_time ON medication_events(recorded_at);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 5,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "symptom_entries",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "title",
+            "getter_name": "title",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(title)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "onset_at",
+            "getter_name": "onsetAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "end_at",
+            "getter_name": "endAt",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (end_at >= onset_at)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "recorded_at",
+            "getter_name": "recordedAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "updated_at",
+            "getter_name": "updatedAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "severity",
+            "getter_name": "severity",
+            "moor_type": "int",
+            "nullable": true,
+            "customConstraints": "CHECK (severity BETWEEN 0 AND 10)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "notes",
+            "getter_name": "notes",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT ''",
+            "default_dart": "const CustomExpression('\\'\\'')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "category",
+            "getter_name": "category",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "pattern",
+            "getter_name": "pattern",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "CHECK (pattern IN ('continuous', 'intermittent'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "triggers",
+            "getter_name": "triggers",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "relief_measures",
+            "getter_name": "reliefMeasures",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "perceived_effect",
+            "getter_name": "perceivedEffect",
+            "moor_type": "string",
+            "nullable": true,
+            "customConstraints": "",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 6,
+      "references": [
+        5
+      ],
+      "type": "table",
+      "data": {
+        "name": "pain_markers",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "symptom_id",
+            "getter_name": "symptomId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES symptom_entries(id)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "symptom_entries",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "body_view",
+            "getter_name": "bodyView",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (body_view IN ('front', 'back'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "x",
+            "getter_name": "x",
+            "moor_type": "double",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (x BETWEEN 0 AND 1)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "y",
+            "getter_name": "y",
+            "moor_type": "double",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (y BETWEEN 0 AND 1)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "radius",
+            "getter_name": "radius",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "CHECK (radius BETWEEN 0 AND 1)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "body_asset_version",
+            "getter_name": "bodyAssetVersion",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "region_code",
+            "getter_name": "regionCode",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "laterality",
+            "getter_name": "laterality",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (laterality IN ('left', 'right', 'midline', 'bilateral', 'unspecified'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "severity",
+            "getter_name": "severity",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (severity BETWEEN 0 AND 10)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "pain_type",
+            "getter_name": "painType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (pain_type IN ('aching', 'sharp', 'burning', 'throbbing', 'tingling', 'other'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 7,
+      "references": [
+        5
+      ],
+      "type": "index",
+      "data": {
+        "on": 5,
+        "name": "symptoms_time",
+        "sql": "CREATE INDEX symptoms_time ON symptom_entries(onset_at);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 8,
+      "references": [
+        2
+      ],
+      "type": "table",
+      "data": {
+        "name": "medication_schedule_rules",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "regimen_id",
+            "getter_name": "regimenId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES medication_regimens(id)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "medication_regimens",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "weekday",
+            "getter_name": "weekday",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (weekday BETWEEN 1 AND 7)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "minute_of_day",
+            "getter_name": "minuteOfDay",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (minute_of_day BETWEEN 0 AND 1439)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "UNIQUE(regimen_id, weekday, minute_of_day)"
+        ],
+        "unique_keys": [
+          [
+            "regimen_id",
+            "weekday",
+            "minute_of_day"
+          ]
+        ]
+      }
+    },
+    {
+      "id": 9,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "measurements",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "kind",
+            "getter_name": "kind",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (kind IN ('weight', 'bloodPressure', 'heartRate', 'temperature', 'glucose', 'sleep'))",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "value",
+            "getter_name": "value",
+            "moor_type": "double",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (value > 0 AND value <= 0.0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "secondary",
+            "getter_name": "secondary",
+            "moor_type": "double",
+            "nullable": true,
+            "customConstraints": "CHECK (secondary > 0 AND secondary <= 0.0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "measured_at",
+            "getter_name": "measuredAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "recorded_at",
+            "getter_name": "recordedAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "source",
+            "getter_name": "source",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT 'manual' CHECK (source = 'manual')",
+            "default_dart": "const CustomExpression('\\'manual\\'')",
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "CHECK((kind = 'bloodPressure')=(secondary IS NOT NULL))"
+        ]
+      }
+    },
+    {
+      "id": 10,
+      "references": [
+        9
+      ],
+      "type": "index",
+      "data": {
+        "on": 9,
+        "name": "measurements_time",
+        "sql": "CREATE INDEX measurements_time ON measurements(measured_at);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 11,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "journal_notes",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "occurred_at",
+            "getter_name": "occurredAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "recorded_at",
+            "getter_name": "recordedAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "body",
+            "getter_name": "body",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(body)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 12,
+      "references": [
+        11
+      ],
+      "type": "index",
+      "data": {
+        "on": 11,
+        "name": "journal_notes_time",
+        "sql": "CREATE INDEX journal_notes_time ON journal_notes(occurred_at);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 13,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "audit_events",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "id",
+            "getter_name": "id",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "record_type",
+            "getter_name": "recordType",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "record_id",
+            "getter_name": "recordId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "action_code",
+            "getter_name": "actionCode",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "recorded_at",
+            "getter_name": "recordedAt",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 14,
+      "references": [
+        13
+      ],
+      "type": "index",
+      "data": {
+        "on": 13,
+        "name": "audit_events_record",
+        "sql": "CREATE INDEX audit_events_record ON audit_events(record_type, record_id, recorded_at);",
+        "unique": false,
+        "columns": []
+      }
+    },
+    {
+      "id": 15,
+      "references": [],
+      "type": "table",
+      "data": {
+        "name": "journal_settings",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "singleton",
+            "getter_name": "singleton",
+            "moor_type": "int",
+            "nullable": false,
+            "customConstraints": "NOT NULL PRIMARY KEY CHECK (singleton = 1)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              "primary-key"
+            ]
+          },
+          {
+            "name": "weight_unit",
+            "getter_name": "weightUnit",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT 'kg' CHECK (weight_unit IN ('kg', 'lb'))",
+            "default_dart": "const CustomExpression('\\'kg\\'')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "temperature_unit",
+            "getter_name": "temperatureUnit",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT 'celsius' CHECK (temperature_unit IN ('celsius', 'fahrenheit'))",
+            "default_dart": "const CustomExpression('\\'celsius\\'')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "glucose_unit",
+            "getter_name": "glucoseUnit",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT 'mmol/L' CHECK (glucose_unit IN ('mmol/L', 'mg/dL'))",
+            "default_dart": "const CustomExpression('\\'mmol/L\\'')",
+            "default_client_dart": null,
+            "dsl_features": []
+          },
+          {
+            "name": "appearance",
+            "getter_name": "appearance",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL DEFAULT 'system' CHECK (appearance IN ('system', 'light', 'dark'))",
+            "default_dart": "const CustomExpression('\\'system\\'')",
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": []
+      }
+    },
+    {
+      "id": 16,
+      "references": [
+        5
+      ],
+      "type": "table",
+      "data": {
+        "name": "symptom_tags",
+        "was_declared_in_moor": true,
+        "columns": [
+          {
+            "name": "symptom_id",
+            "getter_name": "symptomId",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL REFERENCES symptom_entries(id)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": [
+              {
+                "foreign_key": {
+                  "to": {
+                    "table": "symptom_entries",
+                    "column": "id"
+                  },
+                  "initially_deferred": false,
+                  "on_update": null,
+                  "on_delete": null
+                }
+              }
+            ]
+          },
+          {
+            "name": "tag",
+            "getter_name": "tag",
+            "moor_type": "string",
+            "nullable": false,
+            "customConstraints": "NOT NULL CHECK (length(trim(tag)) > 0)",
+            "default_dart": null,
+            "default_client_dart": null,
+            "dsl_features": []
+          }
+        ],
+        "is_virtual": false,
+        "without_rowid": false,
+        "constraints": [
+          "PRIMARY KEY(symptom_id, tag)"
+        ],
+        "explicit_pk": [
+          "symptom_id",
+          "tag"
+        ]
+      }
+    }
+  ],
+  "fixed_sql": [
+    {
+      "name": "profile",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"profile\" (\"singleton\" INTEGER NOT NULL PRIMARY KEY CHECK (singleton = 1), \"name\" TEXT, \"date_of_birth\" TEXT);"
+        }
+      ]
+    },
+    {
+      "name": "medications",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"medications\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"name\" TEXT NOT NULL CHECK (length(trim(name)) > 0), \"strength\" TEXT NOT NULL, \"archived\" INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0, 1)), \"created_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"generic_name\" TEXT, \"brand\" TEXT, \"form\" TEXT, \"strength_unit\" TEXT, \"instructions\" TEXT, \"reason\" TEXT, \"prescribed_by\" TEXT, \"notes\" TEXT, \"started_at\" INTEGER, \"stopped_at\" INTEGER CHECK (stopped_at >= started_at), \"paused_at\" INTEGER CHECK (paused_at >= started_at));"
+        }
+      ]
+    },
+    {
+      "name": "medication_regimens",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"medication_regimens\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"medication_id\" TEXT NOT NULL REFERENCES medications(id), \"amount\" REAL NOT NULL CHECK (amount > 0), \"unit\" TEXT NOT NULL CHECK (length(trim(unit)) > 0), \"kind\" TEXT NOT NULL CHECK (kind IN ('fixed', 'prn', 'course')), \"effective_from\" INTEGER NOT NULL, \"effective_to\" INTEGER CHECK (effective_to >= effective_from), \"instructions_snapshot\" TEXT NOT NULL, \"zone_policy\" TEXT CHECK (zone_policy = 'deviceLocal'), \"reminder_enabled\" INTEGER CHECK (reminder_enabled IN (0, 1)));"
+        }
+      ]
+    },
+    {
+      "name": "medication_events",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"medication_events\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"medication_id\" TEXT NOT NULL REFERENCES medications(id), \"regimen_id\" TEXT REFERENCES medication_regimens(id), \"occurrence_key\" TEXT, \"status\" TEXT NOT NULL CHECK (status IN ('taken', 'skipped', 'missed', 'unknown')), \"intended_at\" INTEGER, \"taken_at\" INTEGER, \"recorded_at\" INTEGER NOT NULL, \"occurred_at\" INTEGER, \"amount\" REAL NOT NULL CHECK (amount > 0), \"unit\" TEXT NOT NULL CHECK (length(trim(unit)) > 0), \"legacy_medication_snapshot\" TEXT, \"catalogue_snapshot\" TEXT, \"regimen_snapshot\" TEXT, \"notes\" TEXT, \"corrects_id\" TEXT UNIQUE REFERENCES medication_events(id), \"correction_reason\" TEXT, CHECK((status = 'taken' AND taken_at IS NOT NULL)OR(status != 'taken' AND taken_at IS NULL)), CHECK((legacy_medication_snapshot IS NOT NULL AND catalogue_snapshot IS NULL AND regimen_snapshot IS NULL AND notes IS NULL AND corrects_id IS NULL)OR(legacy_medication_snapshot IS NULL AND catalogue_snapshot IS NOT NULL AND occurred_at IS NOT NULL AND occurred_at <= recorded_at AND(taken_at IS NULL OR taken_at = occurred_at)AND((regimen_id IS NULL)=(regimen_snapshot IS NULL)))), CHECK((corrects_id IS NULL AND correction_reason IS NULL)OR(corrects_id IS NOT NULL AND corrects_id != id AND correction_reason IS NOT NULL AND length(trim(correction_reason)) > 0)));"
+        }
+      ]
+    },
+    {
+      "name": "medication_events_time",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX medication_events_time ON medication_events (recorded_at)"
+        }
+      ]
+    },
+    {
+      "name": "symptom_entries",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"symptom_entries\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"title\" TEXT NOT NULL CHECK (length(trim(title)) > 0), \"onset_at\" INTEGER NOT NULL, \"end_at\" INTEGER CHECK (end_at >= onset_at), \"recorded_at\" INTEGER NOT NULL, \"updated_at\" INTEGER NOT NULL, \"severity\" INTEGER CHECK (severity BETWEEN 0 AND 10), \"notes\" TEXT NOT NULL DEFAULT '', \"category\" TEXT, \"pattern\" TEXT CHECK (pattern IN ('continuous', 'intermittent')), \"triggers\" TEXT, \"relief_measures\" TEXT, \"perceived_effect\" TEXT);"
+        }
+      ]
+    },
+    {
+      "name": "pain_markers",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"pain_markers\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"symptom_id\" TEXT NOT NULL REFERENCES symptom_entries(id), \"body_view\" TEXT NOT NULL CHECK (body_view IN ('front', 'back')), \"x\" REAL NOT NULL CHECK (x BETWEEN 0 AND 1), \"y\" REAL NOT NULL CHECK (y BETWEEN 0 AND 1), \"radius\" REAL CHECK (radius BETWEEN 0 AND 1), \"body_asset_version\" TEXT NOT NULL, \"region_code\" TEXT NOT NULL, \"laterality\" TEXT NOT NULL CHECK (laterality IN ('left', 'right', 'midline', 'bilateral', 'unspecified')), \"severity\" INTEGER NOT NULL CHECK (severity BETWEEN 0 AND 10), \"pain_type\" TEXT NOT NULL CHECK (pain_type IN ('aching', 'sharp', 'burning', 'throbbing', 'tingling', 'other')));"
+        }
+      ]
+    },
+    {
+      "name": "symptoms_time",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX symptoms_time ON symptom_entries (onset_at)"
+        }
+      ]
+    },
+    {
+      "name": "medication_schedule_rules",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"medication_schedule_rules\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"regimen_id\" TEXT NOT NULL REFERENCES medication_regimens(id), \"weekday\" INTEGER NOT NULL CHECK (weekday BETWEEN 1 AND 7), \"minute_of_day\" INTEGER NOT NULL CHECK (minute_of_day BETWEEN 0 AND 1439), UNIQUE(regimen_id, weekday, minute_of_day));"
+        }
+      ]
+    },
+    {
+      "name": "measurements",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"measurements\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"kind\" TEXT NOT NULL CHECK (kind IN ('weight', 'bloodPressure', 'heartRate', 'temperature', 'glucose', 'sleep')), \"value\" REAL NOT NULL CHECK (value > 0 AND value <= 0.0), \"secondary\" REAL CHECK (secondary > 0 AND secondary <= 0.0), \"measured_at\" INTEGER NOT NULL, \"recorded_at\" INTEGER NOT NULL, \"source\" TEXT NOT NULL DEFAULT 'manual' CHECK (source = 'manual'), CHECK((kind = 'bloodPressure')=(secondary IS NOT NULL)));"
+        }
+      ]
+    },
+    {
+      "name": "measurements_time",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX measurements_time ON measurements (measured_at)"
+        }
+      ]
+    },
+    {
+      "name": "journal_notes",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"journal_notes\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"occurred_at\" INTEGER NOT NULL, \"recorded_at\" INTEGER NOT NULL, \"body\" TEXT NOT NULL CHECK (length(trim(body)) > 0));"
+        }
+      ]
+    },
+    {
+      "name": "journal_notes_time",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX journal_notes_time ON journal_notes (occurred_at)"
+        }
+      ]
+    },
+    {
+      "name": "audit_events",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"audit_events\" (\"id\" TEXT NOT NULL PRIMARY KEY, \"record_type\" TEXT NOT NULL, \"record_id\" TEXT NOT NULL, \"action_code\" TEXT NOT NULL, \"recorded_at\" INTEGER NOT NULL);"
+        }
+      ]
+    },
+    {
+      "name": "audit_events_record",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE INDEX audit_events_record ON audit_events (record_type, record_id, recorded_at)"
+        }
+      ]
+    },
+    {
+      "name": "journal_settings",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"journal_settings\" (\"singleton\" INTEGER NOT NULL PRIMARY KEY CHECK (singleton = 1), \"weight_unit\" TEXT NOT NULL DEFAULT 'kg' CHECK (weight_unit IN ('kg', 'lb')), \"temperature_unit\" TEXT NOT NULL DEFAULT 'celsius' CHECK (temperature_unit IN ('celsius', 'fahrenheit')), \"glucose_unit\" TEXT NOT NULL DEFAULT 'mmol/L' CHECK (glucose_unit IN ('mmol/L', 'mg/dL')), \"appearance\" TEXT NOT NULL DEFAULT 'system' CHECK (appearance IN ('system', 'light', 'dark')));"
+        }
+      ]
+    },
+    {
+      "name": "symptom_tags",
+      "sql": [
+        {
+          "dialect": "sqlite",
+          "sql": "CREATE TABLE IF NOT EXISTS \"symptom_tags\" (\"symptom_id\" TEXT NOT NULL REFERENCES symptom_entries(id), \"tag\" TEXT NOT NULL CHECK (length(trim(tag)) > 0), PRIMARY KEY(symptom_id, tag));"
+        }
+      ]
+    }
+  ]
+}

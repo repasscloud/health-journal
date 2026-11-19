@@ -24,10 +24,15 @@ final class StoredAdministration {
       AdministrationStatus.values.byName(row.status);
 }
 
-/// Isolated append/read adapter. The production composition does not call it.
+/// Append-only native medication administration history.
 final class NativeMedicationHistory {
   NativeMedicationHistory(this._db);
   final JournalDatabase _db;
+
+  Future<List<StoredAdministration>> all() async =>
+      (await _db.select(_db.medicationEvents).get())
+          .map(StoredAdministration.new)
+          .toList();
 
   Future<StoredAdministration?> read(String id) async {
     final row = await (_db.select(
@@ -56,8 +61,15 @@ final class NativeMedicationHistory {
       final current = await (_db.select(
         _db.medicationRegimens,
       )..where((r) => r.id.equals(regimenId))).getSingleOrNull();
-      if (current?.medicationId != medication.id) {
+      if (current == null || current.medicationId != medication.id) {
         throw StateError('Regimen does not belong to the medication.');
+      }
+      final occurred = event.occurredAt.microsecondsSinceEpoch;
+      if (current.zonePolicy != null &&
+          (occurred < current.effectiveFrom ||
+              (current.effectiveTo != null &&
+                  occurred >= current.effectiveTo!))) {
+        throw StateError('Regimen is no longer effective at the event time.');
       }
     }
     if (target != null) {
@@ -65,6 +77,8 @@ final class NativeMedicationHistory {
       if (previous == null ||
           previous.medicationId != event.medicationId ||
           previous.regimenId != event.regimenId ||
+          previous.occurrenceKey != event.occurrenceKey ||
+          previous.intendedAt != event.intendedAt?.microsecondsSinceEpoch ||
           previous.catalogueSnapshot != catalogueValue ||
           previous.regimenSnapshot != regimenValue ||
           previous.recordedAt > recorded) {
@@ -72,6 +86,16 @@ final class NativeMedicationHistory {
       }
     } else if (regimen != null && !regimen.contains(event.occurredAt)) {
       throw ArgumentError('Regimen is not effective at this time.');
+    }
+    if (event.occurrenceKey case final key? when target == null) {
+      final existing =
+          await (_db.select(_db.medicationEvents)
+                ..where((row) => row.occurrenceKey.equals(key))
+                ..limit(1))
+              .getSingleOrNull();
+      if (existing != null) {
+        throw StateError('This occurrence already has an entry.');
+      }
     }
     await _db
         .into(_db.medicationEvents)
@@ -81,6 +105,10 @@ final class NativeMedicationHistory {
             medicationId: event.medicationId,
             regimenId: Value(event.regimenId),
             status: event.status.name,
+            occurrenceKey: Value(event.occurrenceKey),
+            intendedAt: Value(event.intendedAt?.microsecondsSinceEpoch),
+            originalZoneLabel: Value(event.originalZoneLabel),
+            originalOffsetMinutes: Value(event.originalOffsetMinutes),
             takenAt: Value(event.takenAt?.microsecondsSinceEpoch),
             recordedAt: recorded,
             occurredAt: Value(event.occurredAt.microsecondsSinceEpoch),

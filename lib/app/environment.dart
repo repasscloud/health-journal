@@ -10,6 +10,10 @@ final class AppEnvironment {
     : repository = DemoRepository(richFixture: true),
       isDemo = true,
       isReview = true;
+  const AppEnvironment.production(this.repository)
+    : isDemo = false,
+      isReview = false;
+
   // Fail closed until native encrypted storage passes the release proof.
   const AppEnvironment.nativePending()
     : repository = null,

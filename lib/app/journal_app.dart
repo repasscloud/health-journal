@@ -11,6 +11,7 @@ import '../domain/medication.dart';
 import '../domain/measurement_units.dart';
 import '../domain/records.dart';
 import '../domain/regimen.dart';
+import '../domain/schedule_occurrences.dart';
 import 'environment.dart';
 import 'journal_theme.dart';
 import 'journal_startup.dart';
@@ -69,6 +70,7 @@ class _JournalAppState extends State<JournalApp> {
         builder: (context, child) {
           final journal = BuildNotice(
             review: widget.environment.isReview,
+            enabled: widget.environment.isDemo,
             child: child!,
           );
           if (!widget.usePhonePreview) {
@@ -121,6 +123,8 @@ class _JournalHomeState extends State<JournalHome> {
   String search = '';
   String medicationSearch = '';
   String? historyFilter;
+  DateTimeRange? historyDates;
+  int historyLimit = 20;
   var units = const MeasurementUnits();
   static const labels = ['Today', 'Medications', 'Symptoms', 'Timeline'];
   static const icons = [
@@ -132,7 +136,9 @@ class _JournalHomeState extends State<JournalHome> {
 
   JournalRepository get repository => widget.environment.repository!;
 
-  void refresh() => setState(() {});
+  void refresh() {
+    if (mounted) setState(() {});
+  }
 
   Future<void> addMedication() => editMedication(context, repository, refresh);
 
@@ -154,7 +160,10 @@ class _JournalHomeState extends State<JournalHome> {
     context,
     MaterialPageRoute<void>(
       builder: (_) => SymptomForm(
-        onSave: (entry) => setState(() => repository.addSymptom(entry)),
+        onSave: (entry) async {
+          await repository.addSymptom(entry);
+          refresh();
+        },
       ),
     ),
   );
@@ -164,7 +173,10 @@ class _JournalHomeState extends State<JournalHome> {
     MaterialPageRoute<void>(
       builder: (_) => MeasurementForm(
         units: units,
-        onSave: (entry) => setState(() => repository.addMeasurement(entry)),
+        onSave: (entry) async {
+          await repository.addMeasurement(entry);
+          refresh();
+        },
       ),
     ),
   );
@@ -229,7 +241,7 @@ class _JournalHomeState extends State<JournalHome> {
 
   @override
   Widget build(BuildContext context) {
-    if (!widget.environment.isDemo) {
+    if (widget.environment.repository == null) {
       return Scaffold(
         appBar: AppBar(
           title: const Text('Health Journal'),
@@ -250,7 +262,7 @@ class _JournalHomeState extends State<JournalHome> {
                     const JournalHeading('Setup unavailable'),
                     const SizedBox(height: 12),
                     const Text(
-                      'Personal record entry requires encrypted storage verification on iOS and Android. No records have been stored.',
+                      'Personal record entry requires encrypted storage verification for this platform.',
                     ),
                   ],
                 ),
@@ -345,9 +357,37 @@ class _JournalHomeState extends State<JournalHome> {
             );
             return count <= 2;
           });
+    final activeMedications = {
+      for (final medication in repository.medications)
+        if (!medication.archived) medication.id: medication,
+    };
+    final scheduled = [
+      for (final regimen in repository.regimens)
+        if (activeMedications[regimen.medicationId] case final medication?)
+          for (final occurrence in occurrencesForDate(regimen, now))
+            (medication, occurrence),
+    ]..sort((a, b) => a.$2.at.compareTo(b.$2.at));
+    final linked = {
+      for (final event in repository.administrations)
+        ?event.occurrenceKey: event.status,
+    };
     final activity = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        if (scheduled.isNotEmpty) ...[
+          section('Today’s schedule'),
+          for (final (medication, occurrence) in scheduled)
+            Card(
+              child: ListTile(
+                title: Text(medication.name),
+                subtitle: Text(
+                  '${TimeOfDay.fromDateTime(occurrence.at.toLocal()).format(context)} · '
+                  '${linked[occurrence.key]?.label ?? (occurrence.at.isBefore(now) ? 'Overdue · Unconfirmed' : 'Scheduled')}',
+                ),
+                onTap: () => openMedication(medication),
+              ),
+            ),
+        ],
         section(daily.isEmpty ? 'Recent activity' : 'Today’s activity'),
         if (events.isEmpty)
           const Card(
@@ -366,6 +406,8 @@ class _JournalHomeState extends State<JournalHome> {
               selected = 3;
               search = '';
               historyFilter = null;
+              historyDates = null;
+              historyLimit = 20;
             }),
             child: const Text('View full timeline'),
           ),
@@ -542,12 +584,37 @@ class _JournalHomeState extends State<JournalHome> {
         )
         .map((reading) => reading.id)
         .toSet();
-    final items = repository.timeline().where(
-      (item) =>
-          (matchingIds.contains(item.id) ||
-              matchingReadings.contains(item.id)) &&
-          (historyFilter == null || item.type == historyFilter),
-    );
+    final range = historyDates;
+    final end = range == null
+        ? null
+        : DateTime(range.end.year, range.end.month, range.end.day + 1);
+    final items = repository
+        .timeline()
+        .where(
+          (item) =>
+              (matchingIds.contains(item.id) ||
+                  matchingReadings.contains(item.id)) &&
+              (historyFilter == null || item.type == historyFilter) &&
+              (range == null ||
+                  (!item.at.isBefore(range.start) && item.at.isBefore(end!))),
+        )
+        .toList();
+    final symptomIds = items
+        .where((item) => item.type == 'symptom')
+        .map((item) => item.id)
+        .toSet();
+    final severities = repository.symptoms
+        .where((entry) => symptomIds.contains(entry.id))
+        .expand(
+          (entry) => [?entry.severity, ...entry.pain.map((p) => p.severity)],
+        )
+        .toList();
+    final countsByWeek = <DateTime, int>{};
+    for (final item in items.where((item) => item.type == 'symptom')) {
+      final day = item.at.toLocal();
+      final week = DateTime(day.year, day.month, day.day - (day.weekday - 1));
+      countsByWeek.update(week, (count) => count + 1, ifAbsent: () => 1);
+    }
     return [
       const JournalHeading(
         'Timeline',
@@ -560,7 +627,10 @@ class _JournalHomeState extends State<JournalHome> {
           labelText: 'Search timeline',
           prefixIcon: Icon(Icons.search),
         ),
-        onChanged: (value) => setState(() => search = value),
+        onChanged: (value) => setState(() {
+          search = value;
+          historyLimit = 20;
+        }),
       ),
       const SizedBox(height: 10),
       Wrap(
@@ -572,13 +642,76 @@ class _JournalHomeState extends State<JournalHome> {
               label: Text(filter.value),
               selected: historyFilter == filter.key,
               onSelected: (selected) {
-                if (selected) setState(() => historyFilter = filter.key);
+                if (selected) {
+                  setState(() {
+                    historyFilter = filter.key;
+                    historyLimit = 20;
+                  });
+                }
               },
             ),
         ],
       ),
+      Wrap(
+        spacing: 8,
+        children: [
+          TextButton.icon(
+            icon: const Icon(Icons.date_range),
+            label: Text(
+              range == null
+                  ? 'Filter by date'
+                  : '${MaterialLocalizations.of(context).formatShortDate(range.start)} – ${MaterialLocalizations.of(context).formatShortDate(range.end)}',
+            ),
+            onPressed: () async {
+              final selected = await showDateRangePicker(
+                context: context,
+                firstDate: DateTime(1900),
+                lastDate: DateTime(2100, 12, 31),
+                initialDateRange: range,
+              );
+              if (selected != null && mounted) {
+                setState(() {
+                  historyDates = selected;
+                  historyLimit = 20;
+                });
+              }
+            },
+          ),
+          if (range != null)
+            TextButton(
+              onPressed: () => setState(() {
+                historyDates = null;
+                historyLimit = 20;
+              }),
+              child: const Text('Clear dates'),
+            ),
+        ],
+      ),
+      if (historyFilter == 'symptom' && symptomIds.isNotEmpty)
+        Text(
+          '${symptomIds.length} symptom entries'
+          '${severities.isEmpty ? '' : ' · Recorded severity ${severities.reduce((a, b) => a < b ? a : b)}–${severities.reduce((a, b) => a > b ? a : b)}/10'}',
+        ),
+      if (historyFilter == 'symptom' && countsByWeek.isNotEmpty)
+        ExpansionTile(
+          title: const Text('Weekly symptom entries'),
+          children: [
+            for (final week in countsByWeek.entries.take(8))
+              ListTile(
+                title: Text(
+                  'Week of ${MaterialLocalizations.of(context).formatShortDate(week.key)}',
+                ),
+                trailing: Text('${week.value}'),
+              ),
+          ],
+        ),
       if (items.isEmpty) section('No matching events.'),
-      ...eventCards(items),
+      ...eventCards(items.take(historyLimit)),
+      if (items.length > historyLimit)
+        OutlinedButton(
+          onPressed: () => setState(() => historyLimit += 20),
+          child: const Text('Show more events'),
+        ),
     ];
   }
 
@@ -627,7 +760,9 @@ class _JournalHomeState extends State<JournalHome> {
             subtitle: Text(
               widget.environment.isDemo
                   ? 'Entries are held in memory for this session.'
-                  : 'Personal record entry is currently unavailable.',
+                  : widget.environment.repository == null
+                  ? 'Personal record entry is currently unavailable.'
+                  : 'Entries are stored in the encrypted journal on this device.',
             ),
           ),
           const ListTile(
@@ -833,7 +968,15 @@ class _JournalHomeState extends State<JournalHome> {
                       onPressed: () => Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (_) => SymptomDetail(entry: symptom),
+                          builder: (_) => SymptomDetail(
+                            entry: symptom,
+                            onRevise: (updated) async {
+                              await repository.reviseSymptom(updated);
+                              refresh();
+                            },
+                            history: () =>
+                                repository.symptomHistory(symptom.id),
+                          ),
                         ),
                       ),
                       child: const Text('View symptom details'),

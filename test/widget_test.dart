@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:health_journal/app/environment.dart';
@@ -13,6 +14,17 @@ import 'package:health_journal/domain/measurement_units.dart';
 import 'package:health_journal/app/demo_notice.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+  const zoneChannel = MethodChannel('health_journal/device_time_zone');
+  final messenger =
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+  setUp(
+    () => messenger.setMockMethodCallHandler(
+      zoneChannel,
+      (_) async => 'Australia/Adelaide',
+    ),
+  );
+  tearDown(() => messenger.setMockMethodCallHandler(zoneChannel, null));
   testWidgets('wrapped Timeline filters have space and one active choice', (
     tester,
   ) async {
@@ -229,6 +241,7 @@ void main() {
     expect(intake.amount, 2);
     expect(intake.unit, 'tablet');
     expect(intake.takenAt, intake.occurredAt);
+    expect(intake.originalZoneLabel, 'Australia/Adelaide');
     expect(intake.occurredAt.isBefore(before), isFalse);
     expect(intake.occurredAt.isAfter(intake.recordedAt), isFalse);
     expect(intake.medicationSnapshot?.strength, '500');
@@ -255,6 +268,8 @@ void main() {
     await tester.tap(find.text('Back'));
     await tester.pumpAndSettle();
     expect(activeAsset(), 'assets/bodymaps/v2/back.svg');
+    await tester.ensureVisible(map);
+    await tester.pumpAndSettle();
 
     final rect = tester.getRect(map);
     await tester.tapAt(
@@ -359,7 +374,6 @@ void main() {
       find.widgetWithText(TextFormField, 'Symptom title'),
       'Fictional ache',
     );
-    expect(find.text('Aching'), findsOneWidget);
     final slider = find.byType(Slider);
     final symptomScroll = find
         .descendant(
@@ -574,7 +588,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
   testWidgets(
-    'completed historical course saves and mixed weekdays cannot expand',
+    'completed historical course saves and mixed weekdays stay independent',
     (tester) async {
       final environment = AppEnvironment.demo(richFixture: false);
       await tester.pumpWidget(JournalApp(environment: environment));
@@ -649,12 +663,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Revise regimen'));
       await tester.pumpAndSettle();
-      expect(
-        find.textContaining('different weekdays per time'),
-        findsOneWidget,
-      );
-      expect(find.byType(AlertDialog), findsNothing);
-      expect(environment.repository!.regimens.last, same(mixed));
+      expect(find.byType(AlertDialog), findsOneWidget);
+      await tester.tap(find.text('Save'));
+      await tester.pumpAndSettle();
+      final revised = environment.repository!.regimens.last;
+      expect(revised.id, isNot(mixed.id));
+      expect(revised.rules.first.weekdays, {1});
+      expect(revised.rules.last.weekdays, {5});
       expect(mixed.rules.first.weekdays, {1});
       expect(mixed.rules.last.weekdays, {5});
     },
@@ -916,7 +931,10 @@ void main() {
     );
     await tester.pumpAndSettle();
     expect(find.byType(TextFormField), findsNothing);
-    expect(find.textContaining('No records have been stored'), findsOneWidget);
+    expect(
+      find.textContaining('verification for this platform'),
+      findsOneWidget,
+    );
     await tester.tap(find.byTooltip('Settings'));
     await tester.pumpAndSettle();
     expect(find.text('Settings'), findsOneWidget);

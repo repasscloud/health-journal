@@ -15,18 +15,6 @@ void main() {
     expect(validateCourseEnd(DateTime.utc(2020, 1, 1), start), isNotNull);
     expect(validateCourseEnd(start, start), isNotNull);
   });
-  test(
-    'individual weekday shapes are explicitly unsupported, never unioned',
-    () {
-      expect(
-        hasSharedWeekdays([
-          ScheduleRule(hour: 8, minute: 0, weekdays: {1}),
-          ScheduleRule(hour: 18, minute: 0, weekdays: {5}),
-        ]),
-        isFalse,
-      );
-    },
-  );
   test('out of range direct writes and corrections are atomic', () {
     final repo = DemoRepository();
     final med = repo.medications.single;
@@ -130,13 +118,19 @@ void main() {
   test('build composition isolates review identity and entry point', () {
     final main = File('lib/main.dart').readAsStringSync();
     expect(main, contains('kIsWeb'));
-    expect(main, contains('const AppEnvironment.nativePending()'));
+    expect(main, contains("if (dart.library.io) 'app/production_native.dart'"));
+    expect(main, contains('AppEnvironment.demo()'));
+    final production = File('lib/app/production_native.dart')
+        .readAsStringSync();
+    expect(production, contains('Platform.isAndroid'));
+    expect(production, contains('AppEnvironment.nativePending()'));
     expect(main, isNot(contains('fictionalReview')));
     final review = File('lib/main_review.dart').readAsStringSync();
     expect(review, contains("appFlavor != 'review'"));
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
     expect(gradle, contains('applicationId = "com.repasscloud.healthjournal"'));
-    expect(gradle, isNot(contains('applicationIdSuffix')));
+    expect(gradle, contains('gradleProperty("healthJournalDeviceTest")'));
+    expect(gradle, contains('applicationIdSuffix = ".devicetest"'));
     final manifest = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();
     final reviewManifest = File('android/app/src/review/AndroidManifest.xml')

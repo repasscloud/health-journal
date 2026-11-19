@@ -79,6 +79,10 @@ final class Administration {
     this.notes = '',
     this.correctsId,
     this.correctionReason = '',
+    this.occurrenceKey,
+    this.intendedAt,
+    this.originalZoneLabel,
+    this.originalOffsetMinutes,
   }) : occurredAt = occurredAt ?? takenAt ?? recordedAt {
     if (id.trim().isEmpty ||
         medicationId.trim().isEmpty ||
@@ -100,6 +104,16 @@ final class Administration {
             (correctsId == id || correctionReason.trim().isEmpty))) {
       throw ArgumentError('Invalid event time or correction.');
     }
+    if ((occurrenceKey == null) != (intendedAt == null) ||
+        (occurrenceKey != null &&
+            (occurrenceKey!.isEmpty ||
+                regimenId == null ||
+                !intendedAt!.isUtc)) ||
+        (originalZoneLabel == null) != (originalOffsetMinutes == null) ||
+        (originalOffsetMinutes != null &&
+            originalOffsetMinutes!.abs() >= 24 * 60)) {
+      throw ArgumentError('Invalid occurrence or local time metadata.');
+    }
     if (!recordedAt.isUtc || (takenAt != null && !takenAt!.isUtc)) {
       throw ArgumentError('Use UTC timestamps.');
     }
@@ -115,7 +129,9 @@ final class Administration {
   final Medication? medicationSnapshot;
   final DateTime occurredAt;
   final String notes, correctionReason;
-  final String? correctsId;
+  final String? correctsId, occurrenceKey, originalZoneLabel;
+  final DateTime? intendedAt;
+  final int? originalOffsetMinutes;
   final double amount;
   final String unit;
 }

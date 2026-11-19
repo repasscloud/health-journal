@@ -3,14 +3,13 @@ import 'package:flutter/material.dart';
 
 import 'app/environment.dart';
 import 'app/journal_app.dart';
+import 'app/production_stub.dart'
+    if (dart.library.io) 'app/production_native.dart';
 
 void main() {
   runApp(
-    JournalApp(
-      usePhonePreview: kIsWeb,
-      environment: kIsWeb
-          ? AppEnvironment.demo()
-          : const AppEnvironment.nativePending(),
-    ),
+    kIsWeb
+        ? JournalApp(usePhonePreview: true, environment: AppEnvironment.demo())
+        : productionApp(),
   );
 }

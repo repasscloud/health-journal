@@ -34,6 +34,9 @@ android {
     productFlavors {
         create("production") {
             dimension = "environment"
+            if (providers.gradleProperty("healthJournalDeviceTest").orNull == "true") {
+                applicationIdSuffix = ".devicetest"
+            }
         }
         create("review") {
             dimension = "environment"
