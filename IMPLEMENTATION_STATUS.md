@@ -714,3 +714,8 @@ began replacing rows. The previous encrypted journal reopened and retry
 succeeded. The analyzer and all 80 Flutter tests passed. Fresh-install UI
 verification on Android is pending handset unlock. See the
 [release acceptance checkpoint](docs/release-acceptance.md).
+
+New backups are authenticated by reopening the ciphertext before the app hands
+it to the document picker. A regression test verifies that a new backup
+password opens only the new file while the prior file still requires its
+original password. All 81 Flutter tests passed.

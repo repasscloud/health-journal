@@ -118,15 +118,19 @@ app locks protect access on both mobile platforms.
   authenticated header. Benchmark the password derivation on supported devices
   and test malformed files, tampering and wrong passwords. The container,
   staging backend and a disposable Android known-data file round trip now
-  pass. Production export and restore controls remain open.
+  pass. Android production backup export and authenticated preview are
+  available. Wider device benchmarking remains open.
   [#9](https://github.com/repasscloud/health-journal/issues/9)
 - [ ] Implement preview and staged restore for a fresh install or an explicitly
   confirmed replacement. Verify crash recovery, cancellation, preservation of
   the existing journal on failure, and restoration in both iOS/Android
-  directions using only the file and its password.
+  directions using only the file and its password. Android populated
+  replacement passed on the Galaxy A14 5G. Fresh-install device UI and
+  cross-platform transfer remain open.
   [#10](https://github.com/repasscloud/health-journal/issues/10)
 - [ ] Finish backup password change semantics and local data deletion.
-  Keep device credentials separate from portable backups.
+  New exports use a password chosen per file. Prior files retain their
+  original passwords. Local deletion remains open.
   [#11](https://github.com/repasscloud/health-journal/issues/11)
 
 **Exit:** A user can export a readable report and restore an encrypted backup

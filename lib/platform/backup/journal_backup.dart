@@ -68,7 +68,10 @@ final class JournalBackup {
       );
     });
     try {
-      return await _cipher.seal(payload, password);
+      final archive = await _cipher.seal(payload, password);
+      final verified = await _cipher.open(archive, password);
+      verified.fillRange(0, verified.length, 0);
+      return archive;
     } finally {
       payload.fillRange(0, payload.length, 0);
     }

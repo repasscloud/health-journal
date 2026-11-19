@@ -7,7 +7,7 @@
 - Android foundation and the shared native record composition are active.
   Issue #2 is closed. Issue #1 has physical Android review and production evidence, with iOS deferred. Issues #3, #5 and #16–#18
   retain open acceptance criteria.
-- Flutter 3.47.9, 80 Flutter tests, analyzer, web release and two Chrome
+- Flutter 3.47.9, 81 Flutter tests, analyzer, web release and two Chrome
   Playwright cases passed. See [implementation status](IMPLEMENTATION_STATUS.md)
   for physical storage and production-path evidence. No iOS tests were run.
 - The physical Galaxy A14 5G is `R9WW30CSG1K`. The shared app ID exists.

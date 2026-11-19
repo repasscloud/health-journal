@@ -58,4 +58,22 @@ void main() {
       );
     }
   });
+
+  test(
+    'new backup passwords leave earlier archives independently readable',
+    () async {
+      const nextPassword = 'A new fictional password';
+      final next = await cipher.seal(utf8.encode(payload), nextPassword);
+      expect(utf8.decode(await cipher.open(next, nextPassword)), payload);
+      expect(utf8.decode(await cipher.open(fixture, password)), payload);
+      await expectLater(
+        cipher.open(fixture, nextPassword),
+        throwsA(isA<SecretBoxAuthenticationError>()),
+      );
+      await expectLater(
+        cipher.open(next, password),
+        throwsA(isA<SecretBoxAuthenticationError>()),
+      );
+    },
+  );
 }
