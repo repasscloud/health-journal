@@ -4,6 +4,18 @@ async function boot(page) {
   await page.locator('flt-semantics-placeholder').evaluate(e => e.click());
   await page.getByText('DEMO — All records', { exact: false }).waitFor({ timeout: 10000 });
 }
+async function searchTimeline(page, query) {
+  const field = page.getByRole('textbox', { name: 'Search timeline' });
+  // Flutter Web applies the field's editing attributes only after attaching
+  // its input client to the semantics textbox.
+  await expect(async () => {
+    await field.click();
+    await expect(field).toHaveAttribute('autocorrect', 'on', { timeout: 750 });
+    await expect(field).toBeFocused({ timeout: 750 });
+  }).toPass({ timeout: 8000 });
+  await field.fill(query);
+  await expect(field).toHaveValue(query);
+}
 test('reload, independent tabs and browser storage', async ({ page, context }) => {
   await boot(page);
   await page.getByRole('tab', { name: 'Medications', exact: true }).click();
@@ -51,19 +63,13 @@ test('manual measurement remains and resets on reload', async ({ page }) => {
   await expect(value).toHaveValue('72.25');
   await page.getByRole('button', { name: 'Save measurement' }).click();
   await page.getByRole('tab', { name: 'Timeline', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Search timeline' }).click();
-  await expect(page.getByRole('textbox', { name: 'Search timeline' })).toBeFocused();
-  await page.getByRole('textbox', { name: 'Search timeline' }).press('ControlOrMeta+A', { delay: 100 });
-  await page.getByRole('textbox', { name: 'Search timeline' }).pressSequentially('72.25', { delay: 100 });
+  await searchTimeline(page, '72.25');
   await expect(page.getByText(/Weight · 72.25 kg/)).toBeVisible();
   expect(await page.evaluate(() => JSON.stringify({ ...localStorage, ...sessionStorage }))).not.toContain('72.25');
   await page.reload();
   await page.locator('flt-semantics-placeholder').evaluate(e => e.click());
   await page.getByText('DEMO — All records', { exact: false }).waitFor({ timeout: 10000 });
   await page.getByRole('tab', { name: 'Timeline', exact: true }).click();
-  await page.getByRole('textbox', { name: 'Search timeline' }).click();
-  await expect(page.getByRole('textbox', { name: 'Search timeline' })).toBeFocused();
-  await page.getByRole('textbox', { name: 'Search timeline' }).press('ControlOrMeta+A', { delay: 100 });
-  await page.getByRole('textbox', { name: 'Search timeline' }).pressSequentially('72.25', { delay: 100 });
+  await searchTimeline(page, '72.25');
   await expect(page.getByText('No matching events.')).toBeVisible();
 });
