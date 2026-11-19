@@ -1,5 +1,8 @@
 package com.repasscloud.healthjournal
 
+import android.os.Build
+import android.os.Bundle
+import android.view.WindowManager
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
@@ -7,6 +10,17 @@ import java.io.File
 import java.util.TimeZone
 
 class MainActivity : FlutterActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        if (BuildConfig.FLAVOR == "production") {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                setRecentsScreenshotEnabled(false)
+            } else {
+                window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+            }
+        }
+        super.onCreate(savedInstanceState)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "health_journal/device_time_zone").setMethodCallHandler { call, result ->

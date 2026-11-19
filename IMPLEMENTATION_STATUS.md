@@ -629,3 +629,24 @@ original v2 map and edit history still available. Standard production and
 review release APKs built with local development signing. The original shared app ID was
 excluded from installation and data commands. Physical coverage of each
 record, large text, offline lifecycle, and full accessibility remains open.
+
+## 2026-11-19 — Android journal PIN and build verification
+
+Optional PIN enrollment, change and removal use a separately stored Argon2id
+verifier and retry state. Android locks on background and after five minutes
+without pointer or hardware-key input. Android 13+ disables app-switcher
+screenshots and Android 7–12 use a secure window. The demo and review app are
+unchanged. [ADR 0009](docs/adr/0009-android-journal-pin.md)
+
+The isolated Galaxy A14 5G release enrolled a fictional PIN, showed the PIN
+gate on returning from Home, rejected an incorrect PIN and showed the gate
+again after force-stop. A correct PIN reopened the existing measurements and
+symptoms. Host tests cover persisted backoff, re-enrollment with a fresh
+salt, removal requiring authentication and invalid settings. The full
+five-minute timer, older Android fallback and biometrics still need device
+verification.
+
+CI now builds both Android release flavors and checks package identity,
+review-only alias, backup exclusion and that production requests no network
+permission. Local APKs use development signing. Drift regeneration is
+checked for drift from committed generated code.

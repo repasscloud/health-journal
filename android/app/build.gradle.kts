@@ -18,6 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.repasscloud.healthjournal"
+        manifestPlaceholders["journalAppLabel"] = "Health Journal"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -36,6 +37,7 @@ android {
             dimension = "environment"
             if (providers.gradleProperty("healthJournalDeviceTest").orNull == "true") {
                 applicationIdSuffix = ".devicetest"
+                manifestPlaceholders["journalAppLabel"] = "Health Journal Device Test"
             }
         }
         create("review") {

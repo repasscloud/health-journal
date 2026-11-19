@@ -25,11 +25,13 @@ class JournalApp extends StatefulWidget {
     super.key,
     required this.environment,
     this.unlockOnStartup,
+    this.privacySettings,
     this.usePhonePreview = false,
   });
   final AppEnvironment environment;
   final Future<bool> Function()? unlockOnStartup;
   final bool usePhonePreview;
+  final WidgetBuilder? privacySettings;
   @override
   State<JournalApp> createState() => _JournalAppState();
 }
@@ -49,6 +51,7 @@ class _JournalAppState extends State<JournalApp> {
           builder: (_) => JournalHome(
             environment: widget.environment,
             themeMode: _themeMode,
+            privacySettings: widget.privacySettings,
           ),
         ),
       ),
@@ -111,9 +114,11 @@ class JournalHome extends StatefulWidget {
     super.key,
     required this.environment,
     required this.themeMode,
+    this.privacySettings,
   });
   final AppEnvironment environment;
   final ValueNotifier<ThemeMode> themeMode;
+  final WidgetBuilder? privacySettings;
   @override
   State<JournalHome> createState() => _JournalHomeState();
 }
@@ -765,10 +770,20 @@ class _JournalHomeState extends State<JournalHome> {
                   : 'Entries are stored in the encrypted journal on this device.',
             ),
           ),
-          const ListTile(
-            leading: JournalIcon(Icons.lock_outline),
-            title: Text('Privacy & security'),
-            subtitle: Text('PIN and biometrics are unavailable in this build.'),
+          ListTile(
+            leading: const JournalIcon(Icons.lock_outline),
+            title: const Text('Privacy & security'),
+            subtitle: Text(
+              widget.privacySettings == null
+                  ? 'PIN and biometrics are unavailable in this build.'
+                  : 'Manage the journal PIN',
+            ),
+            onTap: widget.privacySettings == null
+                ? null
+                : () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(builder: widget.privacySettings!),
+                  ),
           ),
           const ListTile(
             leading: JournalIcon(Icons.backup_outlined),

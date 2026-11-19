@@ -5,6 +5,7 @@
 ### Added
 
 - Enabled encrypted single-profile record entry in Android production.
+- Added optional Android journal PIN and app-switcher privacy.
 - Added medication revisions, explicit scheduled-dose linkage, symptom edit
   history, and Timeline date filtering and pagination.
 

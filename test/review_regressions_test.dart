@@ -135,7 +135,17 @@ void main() {
         .readAsStringSync();
     final reviewManifest = File('android/app/src/review/AndroidManifest.xml')
         .readAsStringSync();
-    expect(manifest, contains('android:label="Health Journal"'));
+    expect(manifest, contains(r'android:label="${journalAppLabel}"'));
+    expect(
+      gradle,
+      contains('manifestPlaceholders["journalAppLabel"] = "Health Journal"'),
+    );
+    expect(
+      gradle,
+      contains(
+        'manifestPlaceholders["journalAppLabel"] = "Health Journal Device Test"',
+      ),
+    );
     expect(manifest, isNot(contains('ReviewEntry')));
     expect(reviewManifest, contains('android:name=".ReviewEntry"'));
     final activity = File(

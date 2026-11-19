@@ -97,7 +97,9 @@ Records survive restart, and historical markers remain aligned.
   [#6](https://github.com/repasscloud/health-journal/issues/6)
 - [ ] Implement optional PIN and biometric unlock, fallback and throttling,
   background and inactivity locking, and app-switcher privacy. Test denied or
-  changed biometric enrollment and device credential changes.
+  changed biometric enrollment and device credential changes. Android PIN
+  supports enrollment, removal, persisted throttling, relaunch and background
+  locking. Biometric and deferred iOS acceptance remain open.
   [#7](https://github.com/repasscloud/health-journal/issues/7)
 
 **Exit:** Reminder delivery never records intake automatically, and configured

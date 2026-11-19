@@ -7,15 +7,17 @@
 - Android foundation and the shared native record composition are active.
   Issues #1 and #2 have physical review evidence. Issues #3, #5 and #16–#18
   retain open acceptance criteria.
-- Flutter 3.47.9, 67 Flutter tests, analyzer, web release and two Chrome
+- Flutter 3.47.9, 69 foundation and PIN Flutter tests, analyzer, web release and two Chrome
   Playwright cases passed. See [implementation status](IMPLEMENTATION_STATUS.md)
   for physical storage and production-path evidence. No iOS tests were run.
 - The physical Galaxy A14 5G is `R9WW30CSG1K`. The shared app ID exists.
   Any further device verification should use `com.repasscloud.healthjournal.devicetest`
   after checking its identity. Build and logs are kept under ignored `build/`.
-- Next active issue is #7 (Android recents privacy followed by optional
-  authentication). #6 reminders, #8 exports, #9–#11 backup and deletion and
-  #12–#15 production hardening remain open. iOS runtime, signing and
+- Android #7 PIN enrollment, background lock, incorrect PIN and cold unlock
+  passed on hardware. Biometric and idle-duration device cases remain open.
+- Next active issue is #6, starting with the Android permission and local
+  delivery path. #8 exports, #9–#11 backup and deletion, and #12–#15 production
+  hardening remain open. iOS runtime, signing and
   hardware acceptance remain deferred.
 
 ```sh

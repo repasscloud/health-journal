@@ -13,8 +13,9 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get --enforce-lockfile
-      - run: dart format --output=none --set-exit-if-changed lib test tool/native_encryption_probe.dart tool/native_store_probe.dart
+      - run: dart format --output=none --set-exit-if-changed lib test tool
       - run: dart run build_runner build
+      - run: git diff --exit-code -- lib/data/schema/journal_database.g.dart
       - run: flutter analyze
       - run: flutter test
       - run: flutter build web --release
@@ -24,3 +25,30 @@ jobs:
       - run: npm ci --prefix tool/browser
       - run: npx --prefix tool/browser playwright install --with-deps chrome
       - run: npx --prefix tool/browser playwright test --config tool/browser/playwright.config.cjs
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.9'
+          channel: stable
+          cache: true
+      - run: flutter pub get --enforce-lockfile
+      - run: flutter build apk --release --flavor production
+      - run: flutter build apk --release --flavor review -t lib/main_review.dart
+      - name: Verify release flavor identities and production manifest
+        shell: bash
+        run: |
+          apk_dir=build/app/outputs/flutter-apk
+          analyzer="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
+          for flavor in production review; do
+            apk="$apk_dir/app-$flavor-release.apk"
+            test "$("$analyzer" manifest application-id "$apk")" = com.repasscloud.healthjournal
+            "$analyzer" manifest print "$apk" > "$RUNNER_TEMP/$flavor.xml"
+          done
+          grep -q 'ReviewEntry' "$RUNNER_TEMP/review.xml"
+          grep -q 'android:allowBackup="false"' "$RUNNER_TEMP/production.xml"
+          if grep -Eq 'ReviewEntry|android.permission.INTERNET' "$RUNNER_TEMP/production.xml"; then
+            exit 1
+          fi
