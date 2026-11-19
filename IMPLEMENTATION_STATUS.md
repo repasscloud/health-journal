@@ -642,11 +642,34 @@ The isolated Galaxy A14 5G release enrolled a fictional PIN, showed the PIN
 gate on returning from Home, rejected an incorrect PIN and showed the gate
 again after force-stop. A correct PIN reopened the existing measurements and
 symptoms. Host tests cover persisted backoff, re-enrollment with a fresh
-salt, removal requiring authentication and invalid settings. The full
-five-minute timer, older Android fallback and biometrics still need device
-verification.
+salt, removal requiring authentication and invalid settings. On the same
+handset, the isolated Overview card displayed a blank preview, and the
+foreground app showed the PIN gate after five minutes without interaction.
+The older Android fallback and biometrics still need device verification.
 
 CI now builds both Android release flavors and checks package identity,
 review-only alias, backup exclusion and that production requests no network
 permission. Local APKs use development signing. Drift regeneration is
 checked for drift from committed generated code.
+
+## 2026-11-19 — Portable backup container core
+
+Implemented and tested the v1 container with Argon2id and AES-256-GCM using
+the full header as associated data. Independent Python-generated ciphertext
+opens with its file and password alone. Automated cases verify randomized
+salt/nonce, wrong-password rejection, header/ciphertext/tag tampering,
+truncation, unsupported versions and bounded KDF inputs. The schema-v4
+payload uses an allowlist of journal tables. Preview validates rows in an
+in-memory database, and authorized replacement uses one transaction. The
+host test restores to a distinct installation key, rejects unconfirmed
+replacement and preserves both original entries after an injected insert
+failure. Device PIN and Keystore contents are excluded.
+
+The Galaxy A14 5G release probe used a disposable package, independent
+random installation keys, app-private temporary databases and a fictional
+365-measurement file. Creation and write took 919 ms. Inspecting, restoring
+into the second database and reopening took 875 ms (28,348-byte archive).
+These are end-to-end timings for one sample, including the KDF. The probe
+cleaned its temporary files. Production UI, document-provider handoff,
+actual Android-to-iOS transfer and restore process-kill tests remain open.
+See [ADR 0010](docs/adr/0010-portable-backup-container.md).

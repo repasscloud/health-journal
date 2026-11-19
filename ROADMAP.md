@@ -113,7 +113,9 @@ app locks protect access on both mobile platforms.
   [#8](https://github.com/repasscloud/health-journal/issues/8)
 - [ ] Implement password-only portable encrypted backups with a versioned,
   authenticated header. Benchmark the password derivation on supported devices
-  and test malformed files, tampering and wrong passwords.
+  and test malformed files, tampering and wrong passwords. The container,
+  staging backend and a disposable Android known-data file round trip now
+  pass. Production export and restore controls remain open.
   [#9](https://github.com/repasscloud/health-journal/issues/9)
 - [ ] Implement preview and staged restore for a fresh install or an explicitly
   confirmed replacement. Verify crash recovery, cancellation, preservation of

@@ -7,17 +7,20 @@
 - Android foundation and the shared native record composition are active.
   Issues #1 and #2 have physical review evidence. Issues #3, #5 and #16–#18
   retain open acceptance criteria.
-- Flutter 3.47.9, 69 foundation and PIN Flutter tests, analyzer, web release and two Chrome
+- Flutter 3.47.9, 74 foundation, PIN and backup Flutter tests, analyzer, web release and two Chrome
   Playwright cases passed. See [implementation status](IMPLEMENTATION_STATUS.md)
   for physical storage and production-path evidence. No iOS tests were run.
 - The physical Galaxy A14 5G is `R9WW30CSG1K`. The shared app ID exists.
   Any further device verification should use `com.repasscloud.healthjournal.devicetest`
   after checking its identity. Build and logs are kept under ignored `build/`.
 - Android #7 PIN enrollment, background lock, incorrect PIN and cold unlock
-  passed on hardware. Biometric and idle-duration device cases remain open.
+  passed on hardware, along with blank Overview and five-minute idle lock.
+  Biometrics and older Android fallback remain open.
 - Next active issue is #6, starting with the Android permission and local
   delivery path. #8 exports, #9–#11 backup and deletion, and #12–#15 production
-  hardening remain open. iOS runtime, signing and
+  hardening remain open. The #9/#10 backup backend passed host validation
+  and a fictional Android file round trip. Production document-provider
+  handoff, preview/confirmation controls and crash-device tests are pending. iOS runtime, signing and
   hardware acceptance remain deferred.
 
 ```sh
@@ -29,4 +32,5 @@ flutter build web --release
 npx --prefix tool/browser playwright test --config tool/browser/playwright.config.cjs
 ORG_GRADLE_PROJECT_healthJournalDeviceTest=true flutter build apk --release --flavor production
 adb -s R9WW30CSG1K shell pm path com.repasscloud.healthjournal.devicetest
+ORG_GRADLE_PROJECT_healthJournalDeviceTest=true flutter build apk --release --flavor production -t tool/android_backup_probe.dart
 ```
