@@ -49,6 +49,10 @@ jobs:
           done
           grep -q 'ReviewEntry' "$RUNNER_TEMP/review.xml"
           grep -q 'android:allowBackup="false"' "$RUNNER_TEMP/production.xml"
+          grep -q 'android.permission.POST_NOTIFICATIONS' "$RUNNER_TEMP/production.xml"
+          if grep -q 'android.permission.POST_NOTIFICATIONS' "$RUNNER_TEMP/review.xml"; then
+            exit 1
+          fi
           if grep -Eq 'ReviewEntry|android.permission.INTERNET' "$RUNNER_TEMP/production.xml"; then
             exit 1
           fi

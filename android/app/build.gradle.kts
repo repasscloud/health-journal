@@ -4,6 +4,12 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+val deviceTest = providers.gradleProperty("healthJournalDeviceTest").orNull == "true"
+val distribution = providers.gradleProperty("healthJournalDistribution").orNull == "true"
+require(!deviceTest || !distribution) {
+    "The isolated device-test package cannot use distribution signing."
+}
+
 android {
     namespace = "com.repasscloud.healthjournal"
     compileSdk = flutter.compileSdkVersion
@@ -31,24 +37,33 @@ android {
         versionName = flutter.versionName
     }
 
+    val distributionSigning = if (distribution) {
+        fun signingValue(name: String): String =
+            providers.environmentVariable(name).orNull?.takeIf { it.isNotBlank() }
+                ?: error("Missing signing environment variable: $name")
+
+        val signingStore = file(signingValue("HEALTH_JOURNAL_KEYSTORE"))
+        require(signingStore.isFile) { "Android signing keystore could not be opened." }
+        signingConfigs.create("distribution") {
+            storeFile = signingStore
+            storePassword = signingValue("HEALTH_JOURNAL_STORE_PASSWORD")
+            keyAlias = signingValue("HEALTH_JOURNAL_KEY_ALIAS")
+            keyPassword = signingValue("HEALTH_JOURNAL_KEY_PASSWORD")
+        }
+    } else null
+
     flavorDimensions += "environment"
     productFlavors {
         create("production") {
             dimension = "environment"
-            if (providers.gradleProperty("healthJournalDeviceTest").orNull == "true") {
+            signingConfig = distributionSigning ?: signingConfigs.getByName("debug")
+            if (deviceTest) {
                 applicationIdSuffix = ".devicetest"
                 manifestPlaceholders["journalAppLabel"] = "Health Journal Device Test"
             }
         }
         create("review") {
             dimension = "environment"
-        }
-    }
-
-    buildTypes {
-        release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
