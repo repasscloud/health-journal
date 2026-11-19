@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../features/medications/medication_editor.dart';
 import '../features/medications/medication_actions.dart';
 import '../features/records/record_forms.dart';
+import '../features/records/symptom_detail.dart';
 import '../data/repositories/journal_repository.dart';
 import '../domain/medication.dart';
 import '../domain/measurement_units.dart';
@@ -827,6 +828,16 @@ class _JournalHomeState extends State<JournalHome> {
                           ),
                         ],
                       ),
+                  if (symptom != null)
+                    TextButton(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute<void>(
+                          builder: (_) => SymptomDetail(entry: symptom),
+                        ),
+                      ),
+                      child: const Text('View symptom details'),
+                    ),
                 ],
               ),
             ),

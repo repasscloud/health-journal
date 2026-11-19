@@ -1,9 +1,11 @@
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:sqlite3/sqlite3.dart';
 
 import '../../core/installation_key.dart';
+import '../../data/schema/journal_database.dart';
 import 'encrypted_database.dart';
 import 'secure_installation_key_store.dart';
 
@@ -12,10 +14,34 @@ import 'secure_installation_key_store.dart';
 final class NativeStore {
   static const _channel = MethodChannel('health_journal/private_store');
 
-  static Future<Database> open() async {
+  static Future<JournalDatabase> openJournalAt(
+    Directory directory,
+    InstallationKeyStore keys,
+  ) async {
+    final journal = JournalDatabase(
+      NativeDatabase.opened(await openAt(directory, keys)),
+    );
+    try {
+      await journal.customSelect('PRAGMA user_version').getSingle();
+      return journal;
+    } catch (_) {
+      await journal.close();
+      rethrow;
+    }
+  }
+
+  static Future<JournalDatabase> openJournal() async => openJournalAt(
+    await _protectedDirectory(),
+    const SecureInstallationKeyStore(),
+  );
+
+  static Future<Database> open() async =>
+      openAt(await _protectedDirectory(), const SecureInstallationKeyStore());
+
+  static Future<Directory> _protectedDirectory() async {
     final path = await _channel.invokeMethod<String>('prepare');
     if (path == null) throw StateError('Protected storage is unavailable.');
-    return openAt(Directory(path), const SecureInstallationKeyStore());
+    return Directory(path);
   }
 
   /// Directory must already be private, protected and excluded from OS backup.
@@ -37,7 +63,9 @@ final class NativeStore {
       final db = openEncryptedDatabase(file, key);
       try {
         final version = db.select('PRAGMA user_version').single.values.single;
-        if (version != 0 && version != 1) {
+        if (version != 0 &&
+            version != 1 &&
+            version != JournalDatabase.currentSchemaVersion) {
           throw StateError('Unsupported schema. Existing records retained.');
         }
         if (db.select('PRAGMA quick_check').single.values.single != 'ok' ||
@@ -46,8 +74,6 @@ final class NativeStore {
             'Database validation failed. Existing records retained.',
           );
         }
-        // No upgrade path exists yet. Never run speculative DDL or recovery
-        // through deletion; SQLite transactional migrations must be tested first.
         return db;
       } catch (_) {
         db.close();

@@ -23,17 +23,33 @@ CREATE TABLE medication_regimens (
 );
 CREATE TABLE medication_events (
   id TEXT NOT NULL PRIMARY KEY,
-  regimen_id TEXT NOT NULL REFERENCES medication_regimens(id),
+  medication_id TEXT NOT NULL REFERENCES medications(id),
+  regimen_id TEXT REFERENCES medication_regimens(id),
   occurrence_key TEXT,
   status TEXT NOT NULL CHECK (status IN ('taken','skipped','missed','unknown')),
   intended_at INTEGER,
   taken_at INTEGER,
   recorded_at INTEGER NOT NULL,
+  occurred_at INTEGER,
   amount REAL NOT NULL CHECK (amount > 0),
   unit TEXT NOT NULL CHECK (length(trim(unit)) > 0),
-  medication_snapshot TEXT NOT NULL,
+  legacy_medication_snapshot TEXT,
+  catalogue_snapshot TEXT,
+  regimen_snapshot TEXT,
+  notes TEXT,
+  corrects_id TEXT UNIQUE REFERENCES medication_events(id),
+  correction_reason TEXT,
   CHECK ((status = 'taken' AND taken_at IS NOT NULL) OR
-         (status != 'taken' AND taken_at IS NULL))
+         (status != 'taken' AND taken_at IS NULL)),
+  CHECK ((legacy_medication_snapshot IS NOT NULL AND catalogue_snapshot IS NULL
+          AND regimen_snapshot IS NULL AND notes IS NULL AND corrects_id IS NULL)
+      OR (legacy_medication_snapshot IS NULL AND catalogue_snapshot IS NOT NULL
+          AND occurred_at IS NOT NULL AND occurred_at <= recorded_at
+          AND (taken_at IS NULL OR taken_at = occurred_at)
+          AND ((regimen_id IS NULL) = (regimen_snapshot IS NULL)))),
+  CHECK ((corrects_id IS NULL AND correction_reason IS NULL) OR
+         (corrects_id IS NOT NULL AND corrects_id != id AND
+          correction_reason IS NOT NULL AND length(trim(correction_reason)) > 0))
 );
 CREATE INDEX medication_events_time ON medication_events(recorded_at);
 CREATE TABLE symptom_entries (

@@ -1,3 +1,5 @@
+import 'regimen.dart';
+
 enum AdministrationStatus { taken, skipped, missed, unknown }
 
 /// Product strength and administered amount are deliberately separate.
@@ -109,7 +111,7 @@ final class Administration {
   final DateTime recordedAt;
   final DateTime? takenAt;
   final String? regimenId;
-  final String? regimenSnapshot;
+  final Regimen? regimenSnapshot;
   final Medication? medicationSnapshot;
   final DateTime occurredAt;
   final String notes, correctionReason;

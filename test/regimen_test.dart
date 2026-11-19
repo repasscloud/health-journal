@@ -112,7 +112,9 @@ void main() {
     expect(repository.regimens.first.effectiveTo, next.effectiveFrom);
     expect(repository.regimens.first.contains(next.effectiveFrom), isFalse);
     expect(event.amount, 1);
-    expect(event.regimenSnapshot, contains('prn; 1.0 tablet'));
+    expect(event.regimenSnapshot?.kind, ScheduleKind.prn);
+    expect(event.regimenSnapshot?.amount, 1);
+    expect(event.regimenSnapshot?.unit, 'tablet');
     expect(() => repository.reviseRegimen('next', next), throwsStateError);
     expect(repository.regimens.length, 2);
   });
@@ -139,7 +141,9 @@ void main() {
       ),
     );
     expect(event.medicationNameSnapshot, medication.name);
-    expect(event.regimenSnapshot, contains('prn; 1.0 tablet'));
+    expect(event.regimenSnapshot?.kind, ScheduleKind.prn);
+    expect(event.regimenSnapshot?.amount, 1);
+    expect(event.regimenSnapshot?.unit, 'tablet');
     expect(event.takenAt, isNull);
     expect(() => repository.recordAdministration(event), throwsStateError);
   });

@@ -1,3 +1,4 @@
+import '../../domain/administration_snapshots.dart';
 import '../../domain/medication.dart';
 import '../../domain/regimen.dart';
 import '../../domain/records.dart';
@@ -321,9 +322,11 @@ final class DemoRepository implements JournalRepository {
       final original = originals.single;
       if (event.medicationId != original.medicationId ||
           event.medicationNameSnapshot != original.medicationNameSnapshot ||
-          !identical(event.medicationSnapshot, original.medicationSnapshot) ||
+          _catalogueValue(event.medicationSnapshot) !=
+              _catalogueValue(original.medicationSnapshot) ||
           event.regimenId != original.regimenId ||
-          event.regimenSnapshot != original.regimenSnapshot ||
+          _regimenValue(event.regimenSnapshot) !=
+              _regimenValue(original.regimenSnapshot) ||
           event.recordedAt.isBefore(original.recordedAt)) {
         throw StateError('Corrections must preserve original snapshots.');
       }
@@ -331,3 +334,9 @@ final class DemoRepository implements JournalRepository {
     _administrations.add(event);
   }
 }
+
+String? _catalogueValue(Medication? value) =>
+    value == null ? null : AdministrationSnapshots.catalogue(value);
+
+String? _regimenValue(Regimen? value) =>
+    value == null ? null : AdministrationSnapshots.schedule(value);

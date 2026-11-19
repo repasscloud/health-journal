@@ -1,6 +1,8 @@
 # Implementation status
 
-Updated 2026-11-18. Product baseline: README, AGENTS and specifications 01–05 read.
+Updated 2026-11-19. Product baseline: README, AGENTS and specifications 01–05 read.
+See the encrypted medication history and Android release migration checkpoints
+at the end of this file for current results.
 
 ## Milestone 0 — In progress
 
@@ -373,3 +375,99 @@ Verification passed for Flutter analysis, all 50 Flutter tests, and both
 Chrome demo acceptance tests. Web, Android production and review, and unsigned
 iOS release builds completed. All four body-map SVGs in each release bundle
 matched their source files byte for byte.
+
+## 2026-11-18 — Encrypted medication history and Timeline symptom detail
+
+This checkpoint supersedes earlier v1-only, text-only symptom history and
+Android review package notes. Production personal record entry remains gated.
+Android review and production share `com.repasscloud.healthjournal`. Review
+starts with fictional process-local data. A full web page load constructs a
+fresh volatile fictional repository.
+
+- Drift v2 upgrades the event table through the keyed NativeStore connection.
+  The isolated history adapter appends explicit events, supports ad-hoc intake
+  and append-only corrections, and decodes versioned catalogue and regimen
+  snapshots independently of edits to the parent rows. Duplicate corrections
+  are rejected. Parent catalogue and regimen writes for native UI remain open.
+- The exported v1 fixture is the migration source of truth. The upgrade
+  retains original status, amount/unit, linkage, occurrence information,
+  timestamp integers and opaque legacy snapshot text. It derives medication
+  id from the existing relationship and copies confirmed taken time into event
+  time. Other legacy event times, structured historical snapshot values, notes
+  and correction metadata were unavailable. Legacy events can be read. Legacy
+  correction support and new original-offset/occurrence capture remain open.
+  See [ADR 0005](docs/adr/0005-encrypted-medication-event-upgrade.md).
+- Timeline opens a read-only symptom detail with numbered pain locations.
+  Each marker uses its saved front/back asset and version. Visible and spoken
+  labels give anatomical location, pain type and severity. Widget tests
+  exercise all four asset/view combinations at 215 and 520 logical pixels
+  with 200% text scaling and verify marker centres against the image bounds.
+
+### Current verification
+
+| Check | Target and outcome |
+|---|---|
+| Formatting and analysis | Flutter 3.47.9 / Dart 3.13.7. Format check passed across 46 Dart files. `flutter analyze` passed. |
+| Complete Flutter suite | 55 passed on arm64 macOS, including real SQLite3MultipleCiphers through `NativeStore.openJournalAt` with an injected in-memory key store and an isolated directory. |
+| Web release | `flutter build web --release` passed. |
+| Browser demo | 2 Playwright tests passed in local headless Chrome against the web release, covering reload reset, tab isolation, no journal in browser storage, and measurement entry/search/reset. |
+| Android production release | `flutter build apk --release --flavor production` passed. Local development signing. |
+| Android review release | `flutter build apk --release --flavor review -t lib/main_review.dart` passed. APK inspection found the review-only activity alias only in review, the shared ID on both, and minSdk 24 / targetSdk 36. |
+| Unsigned iOS release | `flutter build ios --release --no-codesign` passed against the device SDK with Xcode 27.2. Bundle id `com.example.healthjournal.healthJournal`. |
+
+The encrypted host integration test seeded v1 from its export, upgraded it,
+appended/read an event, ad-hoc intake and linked correction, edited the parent
+rows, checked FKs and scanned the raw DB and present sidecars with WAL active
+and after close. It verified historical snapshots, both event and entry time,
+and stored-key reuse on reopen. The deliberately blocked table drop proved
+exception rollback after rename and copy, preserved v1 records/version/FKs,
+and permitted a retry after removing the blocker. Version 99 was rejected
+with byte-identical DB and a successful keyed inspection of the original
+version and record. Process-interruption recovery and an independent encrypted
+recovery snapshot remain untested and pending.
+
+**Emulator/simulator runtime.** No mobile migration probe or APK installation
+was run for this checkpoint. The Android emulator disappeared from adb during
+the run. The booted iOS simulator was already present and its disposability
+was unverified. Earlier cipher/store probe results above remain separate
+historical evidence. The current release builds exercise the gated app
+composition; the history adapter was exercised by the host integration test.
+
+**Physical acceptance.** No physical installation, signing or provisioning
+changes, deployment, commit or push. Hardware key behaviour, effective file
+protection and locked-device behaviour remain pending. The previously observed
+iPhone registered-device limit remains the last known provisioning blocker.
+
+**First manual action.** Identify a verified disposable emulator or simulator
+where the shared app package is absent, then run a target-specific version of
+the fictional migration check through the protected directory and secure key
+adapter. Keep production entry gated through recovery and hardware acceptance.
+Symptom editing, reports, reminders, app lock and portable backup were outside
+this checkpoint.
+
+## 2026-11-19 — Android release migration runtime
+
+The Android release probe entry point uses the platform protected-directory
+channel and secure installation-key adapter. It was installed only on a
+fresh, booted `HJ_Migration_Disposable_20261119` AVD
+(`emulator-5562`, API 35, arm64), after checking emulator identity and that
+`com.repasscloud.healthjournal` was absent. The probe seeded the exported
+fictional Drift v1 SQL, upgraded to v2, verified legacy facts and foreign
+keys, appended an explicit ad-hoc administration and correction, and scanned
+the encrypted DB and present sidecars with WAL active and after close.
+Cold launch reported `PASS_UPGRADE` in PID 4109. A force-stop and second cold
+launch reported `PASS_RESTART` in PID 4205 with the original records and
+stored installation key. This restart occurred after migration completed.
+
+The host suite also passed all 55 tests, including the deliberately failed
+migration rollback/retry and unsupported-version preservation. Formatting
+and analysis passed on Flutter 3.47.9 / Dart 3.13.7. The Android production and
+fictional review release builds also passed. The web release built and both
+Chrome Playwright reset/storage tests passed against it. The unsigned iOS
+device release built with Xcode 27.2. The migration APK is separate from the
+regular production APK. Logs are in the ignored `build/mobile-checkpoint/` directory.
+
+No installation or probe ran on the connected Samsung. iOS migration runtime,
+process death during migration, an independent encrypted recovery snapshot
+and physical security acceptance remain open. The production gate is still
+in place. No phone action is needed to finish this checkpoint.

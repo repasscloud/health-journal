@@ -1,30 +1,37 @@
 # Health Journal — next continuation
 
-Continue from the current working tree. Read AGENTS, README, specifications 01–05,
-IMPLEMENTATION_STATUS and all three ADRs before coding. Preserve all changes and
-Xcode signing settings; no commit/push or subagents without explicit authorisation.
+Read AGENTS.md, README.md, specifications 01–05, the latest checkpoint in
+IMPLEMENTATION_STATUS.md and all ADRs before editing. Preserve uncommitted work.
+The 2026-11-18 checkpoint and ADR 0005 supersede earlier handoffs that describe
+an isolated review package, pending inline administration validation, a v1-only
+store, or text-only symptom history.
 
-Android fictional review is now a separate flavor and entry point:
-`flutter build apk --release --flavor review -t lib/main_review.dart`.
-Package `com.example.healthjournal.health_journal.fictionalreview`, launcher
-`HJ FICTIONAL REVIEW`. It uses a fresh rich deterministic fictional memory fixture,
-resets on process restart, and skips Android native plugins/protected-store channel.
-Never treat it as personal-record production. Main.dart still gates native records;
-web remains volatile demo-only. Android normal builds/probes now need
-`--flavor production` (iOS does not). Do not install probes over a personal-data app.
+Android production and fictional review share `com.repasscloud.healthjournal`.
+The review entry point requires its compiled Android flavor, skips native
+storage plugins and starts a volatile fictional fixture on each process launch.
+Web always starts a fresh volatile fictional repository on each full page load.
+Native production personal record entry remains gated. Keep builds and mobile
+runtime evidence distinct. Restrict installs/probes to explicitly verified
+disposable virtual targets for this checkpoint. Leave physical installations,
+signing, provisioning, deployments, commits and pushes untouched.
 
-The three previous review findings are fixed and regression-tested. Mixed per-time
-weekday revisions are explicitly refused before opening the shared-weekday editor;
-full per-time editing remains unfinished. Catalogue history viewer and regimen date
-labels are present; schedule timeline names snapshot at regimen creation. Constructor
-snapshots remain optional and volatile corrections still use catalogue object identity;
-replace this with a stable versioned value contract before native serialization.
+The isolated NativeStore adapter now upgrades encrypted Drift v1 to v2 and
+reads/appends medication events with independently versioned catalogue and
+regimen values. Legacy v1 event text and timestamp integers remain intact.
+See ADR 0005 for unavailable fields, correction limits and the exact recovery
+tests. The arm64 macOS Flutter tests exercise the encrypted SQLite path with
+injected keys. The Android API 35 arm64 disposable emulator passed the release
+migration probe and a separate-process restart through the platform secure key
+store. iOS migration runtime, interruption during migration, independent
+encrypted recovery snapshots and hardware security acceptance remain open.
+See the latest status for actual build and browser results.
 
-Next: install the review APK on an authorised physical Android phone if one appears;
-check package conflict first, never uninstall/clear or blindly replace an existing app.
-Build/emulator evidence is not physical-device evidence. Continue complete independent
-slices: per-time weekdays, inline administration validation preserving inputs, symptom
-map history viewer/editing, accessibility and timezone/occurrence semantics. Native
-repository/schema/migration recovery, lock/reminders, reports and portable backup
-remain unfinished. Do not weaken the physical-iPhone release/security gate or retry
-unchanged Personal Team provisioning. Update status with this continuation's evidence.
+Timeline symptom detail is read-only and uses each saved marker's embedded
+asset version, view and normalised coordinates. Widget tests cover both versions
+and views at two widths with 200% text scaling and semantic marker labels.
+
+No phone action is needed for the completed checkpoint. Keep the gate in place
+while validating iOS migration runtime, interrupted migration, recovery
+snapshots and device protection. Physical iPhone release acceptance previously
+hit the registered-device limit and requires a suitable signing/provisioning
+environment in a separately authorised session.

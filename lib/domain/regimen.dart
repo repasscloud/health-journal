@@ -129,9 +129,7 @@ final class Regimen {
       amount: actualAmount ?? amount,
       unit: actualUnit ?? unit,
       regimenId: id,
-      regimenSnapshot:
-          '${kind.name}; $amount $unit; $instructions; '
-          'effective $effectiveFrom to $effectiveTo; ${rules.map((r) => '${r.localTime} weekdays ${(r.weekdays.toList()..sort()).join(',')}').join('; ')}; $zonePolicy',
+      regimenSnapshot: this,
     );
   }
 }

@@ -54,8 +54,9 @@ Final product name, bundle IDs/package IDs, brand assets, privacy-policy URL, su
 
 ## Development (implementation in progress)
 
-See [CHANGELOG.md](CHANGELOG.md) for changes and
-[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for readiness. Native
+See [ROADMAP.md](ROADMAP.md) for the remaining milestones,
+[IMPLEMENTATION_STATUS.md](IMPLEMENTATION_STATUS.md) for verification, and
+[CHANGELOG.md](CHANGELOG.md) for changes. Native
 record entry is currently gated pending release encryption verification on both targets.
 The web app is always a volatile fictional demo; no environment flag enables production
 web records. Reloading or opening a new tab constructs a new fixture.
@@ -99,6 +100,19 @@ is not physical-device file-protection, lock/unlock or portable-backup verificat
 On iOS Simulator, use `--debug` for the store probe; simulator PASS/restart proves only
 the simulator path. It cannot replace physical-iPhone release, file-protection or locked-
 device acceptance. Native personal-record entry stays gated regardless of simulator PASS.
+
+## Android encrypted migration probe
+
+`tool/native_migration_probe.dart` is a separate release entry point for a
+disposable emulator where `com.repasscloud.healthjournal` is absent. Its
+`FICTIONAL_V1_SQL_BASE64` Dart define is the Base64-encoded UTF-8 JSON list of
+SQLite statements from `test/fixtures/schema_v1.json` under `fixed_sql`. Build
+it with the production flavor so the native protected directory and secure key
+adapter are available. Keep its artifact separate from the normal production
+APK and explicitly select the verified emulator serial for installation.
+Look for `HEALTH_JOURNAL_MIGRATION_PROOF:PASS_UPGRADE` on cold launch, then
+force-stop and relaunch without clearing data and check for `PASS_RESTART`.
+The probe leaves fictional data in the disposable emulator.
 
 ## Android fictional device review
 
