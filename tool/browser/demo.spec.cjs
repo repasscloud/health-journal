@@ -12,9 +12,9 @@ async function searchTimeline(page, query) {
     await field.click();
     await expect(field).toHaveAttribute('autocorrect', 'on', { timeout: 750 });
     await expect(field).toBeFocused({ timeout: 750 });
+    await field.fill(query);
+    await expect(field).toHaveValue(query, { timeout: 750 });
   }).toPass({ timeout: 8000 });
-  await field.fill(query);
-  await expect(field).toHaveValue(query);
 }
 test('reload, independent tabs and browser storage', async ({ page, context }) => {
   await boot(page);
@@ -70,6 +70,8 @@ test('manual measurement remains and resets on reload', async ({ page }) => {
   await page.locator('flt-semantics-placeholder').evaluate(e => e.click());
   await page.getByText('DEMO — All records', { exact: false }).waitFor({ timeout: 10000 });
   await page.getByRole('tab', { name: 'Timeline', exact: true }).click();
-  await searchTimeline(page, '72.25');
-  await expect(page.getByText('No matching events.')).toBeVisible();
+  await page.getByRole('checkbox', { name: 'Measurements', exact: true }).click();
+  await page.setViewportSize({ width: 1280, height: 1250 });
+  await expect(page.getByText(/Weight · 72 kg/)).toBeVisible();
+  await expect(page.getByText(/Weight · 72\.25 kg/)).toHaveCount(0);
 });
