@@ -421,15 +421,44 @@ void main() {
       );
       expect(first.width, second.width);
       expect(next.top - first.bottom, greaterThanOrEqualTo(12));
-      await tester.tap(find.text('Head'));
+      const regions = {
+        'Head': 'head',
+        'Torso': 'torso',
+        'Right Arm': 'right_arm',
+        'Left Arm': 'left_arm',
+        'Right Leg': 'right_leg',
+        'Left Leg': 'left_leg',
+      };
+      for (final label in regions.keys) {
+        final button = find.widgetWithText(OutlinedButton, label);
+        await tester.ensureVisible(button);
+        await tester.pumpAndSettle();
+        expect(tester.getSize(button).height, greaterThanOrEqualTo(48));
+        await tester.tap(button);
+        await tester.pumpAndSettle();
+      }
+      tester.view.physicalSize = const Size(750, 392);
+      tester.platformDispatcher.textScaleFactorTestValue = 2;
+      addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+      tester.view.viewInsets = const FakeViewPadding(bottom: 110);
+      tester.view.padding = const FakeViewPadding();
       await tester.pumpAndSettle();
       final save = find.widgetWithText(FilledButton, 'Save symptom');
       await tester.scrollUntilVisible(save, 220, scrollable: scroll);
+      final position = tester.state<ScrollableState>(scroll).position;
+      position.jumpTo(position.maxScrollExtent);
       await tester.pumpAndSettle();
-      expect(tester.getRect(save).bottom, lessThanOrEqualTo(718));
+      expect(tester.getRect(save).bottom, lessThanOrEqualTo(282));
+      tester.view.resetViewInsets();
+      tester.view.padding = const FakeViewPadding(bottom: 32);
+      await tester.pumpAndSettle();
+      position.jumpTo(position.maxScrollExtent);
+      await tester.pumpAndSettle();
+      expect(tester.getRect(save).bottom, lessThanOrEqualTo(360));
       await tester.tap(save);
       await tester.pumpAndSettle();
-      expect(saved?.pain.single.region, 'head');
+      expect(saved?.pain.map((point) => point.region), regions.values);
+      expect(tester.takeException(), isNull);
     },
   );
 }
