@@ -7,6 +7,7 @@ import 'package:sqlite3/sqlite3.dart';
 import '../../core/installation_key.dart';
 import '../../data/schema/journal_database.dart';
 import 'encrypted_database.dart';
+import 'migration_snapshot.dart';
 import 'secure_installation_key_store.dart';
 
 /// Native-only composition for the protected database. Not exposed to record UI
@@ -19,7 +20,7 @@ final class NativeStore {
     InstallationKeyStore keys,
   ) async {
     final journal = JournalDatabase(
-      NativeDatabase.opened(await openAt(directory, keys)),
+      NativeDatabase.opened(await _openAt(directory, keys, snapshot: true)),
     );
     try {
       await journal.customSelect('PRAGMA user_version').getSingle();
@@ -44,27 +45,51 @@ final class NativeStore {
     return Directory(path);
   }
 
+  /// Explicit Start Fresh operation for the future gated native composition.
+  /// A retry returns the existing profile without replacing it.
+  static Future<ProfileData> initializeProfile(JournalDatabase journal) =>
+      journal.transaction(() async {
+        await journal.customStatement(
+          'INSERT INTO profile (singleton) VALUES (1) ON CONFLICT DO NOTHING',
+        );
+        return journal.select(journal.profile).getSingle();
+      });
+
   /// Directory must already be private, protected and excluded from OS backup.
   /// A single composition owner must serialize open/close operations.
   static Future<Database> openAt(
     Directory directory,
     InstallationKeyStore keys,
-  ) async {
+  ) => _openAt(directory, keys);
+
+  static Future<Database> _openAt(
+    Directory directory,
+    InstallationKeyStore keys, {
+    bool snapshot = false,
+  }) async {
     final file = File('${directory.path}/journal.db');
     // Orphaned sidecars also count as existing data: never mint a replacement key.
-    final exists = [
-      file.path,
-      '${file.path}-wal',
-      '${file.path}-shm',
-      '${file.path}-journal',
-    ].any((path) => File(path).existsSync());
+    final exists =
+        [
+          file.path,
+          '${file.path}-wal',
+          '${file.path}-shm',
+          '${file.path}-journal',
+        ].any((path) => File(path).existsSync()) ||
+        directory.listSync().whereType<File>().any(
+          (file) => file.uri.pathSegments.last.startsWith('pre-upgrade-v'),
+        );
+    if (exists && !file.existsSync()) {
+      throw StateError('Journal is missing. Existing recovery data retained.');
+    }
     final key = await InstallationKeyService(keys).load(databaseExists: exists);
     try {
       final db = openEncryptedDatabase(file, key);
       try {
-        final version = db.select('PRAGMA user_version').single.values.single;
+        final version = db.userVersion;
         if (version != 0 &&
             version != 1 &&
+            version != 2 &&
             version != JournalDatabase.currentSchemaVersion) {
           throw StateError('Unsupported schema. Existing records retained.');
         }
@@ -73,6 +98,11 @@ final class NativeStore {
           throw StateError(
             'Database validation failed. Existing records retained.',
           );
+        }
+        if (snapshot &&
+            version > 0 &&
+            version < JournalDatabase.currentSchemaVersion) {
+          await saveMigrationSnapshot(directory, db, key, version);
         }
         return db;
       } catch (_) {

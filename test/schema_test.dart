@@ -13,14 +13,14 @@ void main() {
     );
     await expectLater(
       db.customStatement(
-        "INSERT INTO medication_regimens VALUES ('r','missing',1,'tablet','prn',1,NULL,'')",
+        "INSERT INTO medication_regimens (id, medication_id, amount, unit, kind, effective_from, effective_to, instructions_snapshot) VALUES ('r','missing',1,'tablet','prn',1,NULL,'')",
       ),
       throwsA(anything),
     );
     final check = await db.customSelect('PRAGMA foreign_key_check').get();
     expect(check, isEmpty);
     final version = await db.customSelect('PRAGMA user_version').getSingle();
-    expect(version.read<int>('user_version'), 2);
+    expect(version.read<int>('user_version'), 3);
   });
   test(
     'coordinates and severity cannot bypass the database contract',
@@ -28,7 +28,7 @@ void main() {
       final db = JournalDatabase(NativeDatabase.memory());
       addTearDown(db.close);
       await db.customStatement(
-        "INSERT INTO symptom_entries VALUES ('s','Fictional pain',1,NULL,1,1,5,'')",
+        "INSERT INTO symptom_entries (id, title, onset_at, end_at, recorded_at, updated_at, severity, notes) VALUES ('s','Fictional pain',1,NULL,1,1,5,'')",
       );
       await expectLater(
         db.customStatement(

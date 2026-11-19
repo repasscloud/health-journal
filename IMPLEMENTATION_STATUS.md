@@ -471,3 +471,46 @@ No installation or probe ran on the connected Samsung. iOS migration runtime,
 process death during migration, an independent encrypted recovery snapshot
 and physical security acceptance remain open. The production gate is still
 in place. No phone action is needed to finish this checkpoint.
+
+## 2026-11-19 — Foundation schema v3 and encrypted recovery
+
+The isolated native opener now writes and validates an encrypted pre-upgrade
+snapshot in the app's protected, backup-excluded directory before applying a
+supported migration. It leaves the original journal in place if migration
+fails and refuses to create a fresh journal over orphaned recovery data.
+This is a same-installation recovery point. Portable recovery remains
+milestone 3. [ADR 0006](docs/adr/0006-migration-recovery-and-foundation-schema.md)
+
+Drift v3 supports both exported historical versions. It adds schedule rules,
+manual measurements, journal notes, symptom tags, audit events, singleton
+settings, and nullable catalogue, regimen and symptom metadata. It preserves
+legacy facts and does not synthesize unavailable metadata. The isolated
+Start Fresh API creates one profile transactionally and preserves it on
+retry and reopen. Production does not call it while security acceptance is
+open. Record UI integration remains milestone 1.
+
+**Host recovery:** A separate process was killed after migration SQL and
+version stamping and before outer commit, in both rollback-journal and WAL
+modes. The original v2 schema and records reopened, the published encrypted
+snapshot was readable only with the key, and the v2 to v3 retry passed. Tests
+also cover v1 to v3, committed WAL snapshot content and independent lifetime,
+active sidecar plaintext scans, WAL and SHM cleanup, and SQLite temporary
+tables backed by memory. This exercised process termination, not power loss.
+
+**Android runtime:** Release probe passed v1 to v3 on the fresh
+`HJ_Foundation_V3_Disposable` Android API 35 arm64 emulator, with
+`PASS_UPGRADE` in PID 4161 and `PASS_RESTART` in PID 4246. It exercised
+snapshot creation, isolated profile bootstrap, the protected directory,
+the platform key store, and reopening fictional data in a new process.
+Physical Android acceptance remains open. The attached Samsung already
+had the shared production/review package, so it was not replaced or tested
+with the migration probe. Credential-change checks require owner participation.
+
+**Release gate:** iOS testing was excluded by request. iOS runtime evidence
+and hardware security acceptance remain open before enabling production
+Start Fresh or marking milestone 0 complete.
+
+**Checks:** Formatting across 50 Dart files, `flutter analyze`, all 60
+Flutter tests, both Android release builds, the web release build and both
+Chrome Playwright reload/storage tests passed. Logs are in the ignored
+`build/foundation-v3/` directory.

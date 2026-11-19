@@ -276,7 +276,7 @@ void main() {
           .data
           .values
           .single,
-      2,
+      3,
     );
     expect(
       (await NativeMedicationHistory(upgraded).read('old-dose'))!

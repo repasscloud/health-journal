@@ -15,23 +15,18 @@ runtime evidence distinct. Restrict installs/probes to explicitly verified
 disposable virtual targets for this checkpoint. Leave physical installations,
 signing, provisioning, deployments, commits and pushes untouched.
 
-The isolated NativeStore adapter now upgrades encrypted Drift v1 to v2 and
-reads/appends medication events with independently versioned catalogue and
-regimen values. Legacy v1 event text and timestamp integers remain intact.
-See ADR 0005 for unavailable fields, correction limits and the exact recovery
-tests. The arm64 macOS Flutter tests exercise the encrypted SQLite path with
-injected keys. The Android API 35 arm64 disposable emulator passed the release
-migration probe and a separate-process restart through the platform secure key
-store. iOS migration runtime, interruption during migration, independent
-encrypted recovery snapshots and hardware security acceptance remain open.
-See the latest status for actual build and browser results.
+The isolated NativeStore adapter upgrades encrypted v1 or v2 to v3 and saves
+a verified encrypted local snapshot before migrating. Host tests kill a
+separate process before commit in WAL and rollback-journal modes, inspect
+the original and snapshot, and retry. v3 adds the remaining foundation
+tables and a tested explicit singleton profile bootstrap. See ADRs 0005 and
+0006 and the latest implementation status for build/runtime evidence.
 
 Timeline symptom detail is read-only and uses each saved marker's embedded
 asset version, view and normalised coordinates. Widget tests cover both versions
 and views at two widths with 200% text scaling and semantic marker labels.
 
-No phone action is needed for the completed checkpoint. Keep the gate in place
-while validating iOS migration runtime, interrupted migration, recovery
-snapshots and device protection. Physical iPhone release acceptance previously
-hit the registered-device limit and requires a suitable signing/provisioning
-environment in a separately authorised session.
+Production Start Fresh and personal records remain gated. Physical Android
+acceptance requires an isolated installation and owner-assisted credential
+checks. iOS testing was excluded from the latest checkpoint and remains open
+for eventual mobile release acceptance.

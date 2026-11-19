@@ -7,7 +7,7 @@ part 'journal_database.g.dart';
 class JournalDatabase extends _$JournalDatabase {
   JournalDatabase(super.executor);
 
-  static const currentSchemaVersion = 2;
+  static const currentSchemaVersion = 3;
 
   @override
   int get schemaVersion => currentSchemaVersion;
@@ -28,15 +28,16 @@ class JournalDatabase extends _$JournalDatabase {
       await _verifyAndStamp();
     }),
     onUpgrade: (m, from, to) async {
-      if (from != 1 || to != currentSchemaVersion) {
+      if ((from != 1 && from != 2) || to != currentSchemaVersion) {
         throw StateError('Unsupported schema. Existing records retained.');
       }
       await transaction(() async {
-        await customStatement(
-          'ALTER TABLE medication_events RENAME TO medication_events_v1',
-        );
-        await m.createTable(medicationEvents);
-        await customStatement('''
+        if (from == 1) {
+          await customStatement(
+            'ALTER TABLE medication_events RENAME TO medication_events_v1',
+          );
+          await m.createTable(medicationEvents);
+          await customStatement('''
           INSERT INTO medication_events (
             id, medication_id, regimen_id, occurrence_key, status, intended_at,
             taken_at, recorded_at, occurred_at, amount, unit,
@@ -48,8 +49,47 @@ class JournalDatabase extends _$JournalDatabase {
           FROM medication_events_v1 e
           LEFT JOIN medication_regimens r ON r.id = e.regimen_id
         ''');
-        await customStatement('DROP TABLE medication_events_v1');
-        await m.createIndex(medicationEventsTime);
+          await customStatement('DROP TABLE medication_events_v1');
+          await m.createIndex(medicationEventsTime);
+        }
+        for (final column in [
+          medications.genericName,
+          medications.brand,
+          medications.form,
+          medications.strengthUnit,
+          medications.instructions,
+          medications.reason,
+          medications.prescribedBy,
+          medications.notes,
+          medications.startedAt,
+          medications.stoppedAt,
+          medications.pausedAt,
+        ]) {
+          await m.addColumn(medications, column);
+        }
+        await m.addColumn(medicationRegimens, medicationRegimens.zonePolicy);
+        await m.addColumn(
+          medicationRegimens,
+          medicationRegimens.reminderEnabled,
+        );
+        for (final column in [
+          symptomEntries.category,
+          symptomEntries.pattern,
+          symptomEntries.triggers,
+          symptomEntries.reliefMeasures,
+          symptomEntries.perceivedEffect,
+        ]) {
+          await m.addColumn(symptomEntries, column);
+        }
+        await m.createTable(symptomTags);
+        await m.createTable(medicationScheduleRules);
+        await m.createTable(measurements);
+        await m.createIndex(measurementsTime);
+        await m.createTable(journalNotes);
+        await m.createIndex(journalNotesTime);
+        await m.createTable(auditEvents);
+        await m.createIndex(auditEventsRecord);
+        await m.createTable(journalSettings);
         await _verifyAndStamp();
       });
     },

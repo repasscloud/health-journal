@@ -9,7 +9,18 @@ CREATE TABLE medications (
   strength TEXT NOT NULL,
   archived INTEGER NOT NULL DEFAULT 0 CHECK (archived IN (0,1)),
   created_at INTEGER NOT NULL,
-  updated_at INTEGER NOT NULL
+  updated_at INTEGER NOT NULL,
+  generic_name TEXT,
+  brand TEXT,
+  form TEXT,
+  strength_unit TEXT,
+  instructions TEXT,
+  reason TEXT,
+  prescribed_by TEXT,
+  notes TEXT,
+  started_at INTEGER,
+  stopped_at INTEGER CHECK (stopped_at >= started_at),
+  paused_at INTEGER CHECK (paused_at >= started_at)
 );
 CREATE TABLE medication_regimens (
   id TEXT NOT NULL PRIMARY KEY,
@@ -19,7 +30,9 @@ CREATE TABLE medication_regimens (
   kind TEXT NOT NULL CHECK (kind IN ('fixed','prn','course')),
   effective_from INTEGER NOT NULL,
   effective_to INTEGER CHECK (effective_to >= effective_from),
-  instructions_snapshot TEXT NOT NULL
+  instructions_snapshot TEXT NOT NULL,
+  zone_policy TEXT CHECK (zone_policy = 'deviceLocal'),
+  reminder_enabled INTEGER CHECK (reminder_enabled IN (0,1))
 );
 CREATE TABLE medication_events (
   id TEXT NOT NULL PRIMARY KEY,
@@ -60,7 +73,12 @@ CREATE TABLE symptom_entries (
   recorded_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   severity INTEGER CHECK (severity BETWEEN 0 AND 10),
-  notes TEXT NOT NULL DEFAULT ''
+  notes TEXT NOT NULL DEFAULT '',
+  category TEXT,
+  pattern TEXT CHECK (pattern IN ('continuous','intermittent')),
+  triggers TEXT,
+  relief_measures TEXT,
+  perceived_effect TEXT
 );
 CREATE TABLE pain_markers (
   id TEXT NOT NULL PRIMARY KEY,
@@ -76,3 +94,54 @@ CREATE TABLE pain_markers (
   pain_type TEXT NOT NULL CHECK (pain_type IN ('aching','sharp','burning','throbbing','tingling','other'))
 );
 CREATE INDEX symptoms_time ON symptom_entries(onset_at);
+
+CREATE TABLE medication_schedule_rules (
+  id TEXT NOT NULL PRIMARY KEY,
+  regimen_id TEXT NOT NULL REFERENCES medication_regimens(id),
+  weekday INTEGER NOT NULL CHECK (weekday BETWEEN 1 AND 7),
+  minute_of_day INTEGER NOT NULL CHECK (minute_of_day BETWEEN 0 AND 1439),
+  UNIQUE (regimen_id, weekday, minute_of_day)
+);
+
+CREATE TABLE measurements (
+  id TEXT NOT NULL PRIMARY KEY,
+  kind TEXT NOT NULL CHECK (kind IN ('weight','bloodPressure','heartRate','temperature','glucose','sleep')),
+  value REAL NOT NULL CHECK (value > 0 AND value <= 1.7976931348623157e308),
+  secondary REAL CHECK (secondary > 0 AND secondary <= 1.7976931348623157e308),
+  measured_at INTEGER NOT NULL,
+  recorded_at INTEGER NOT NULL,
+  source TEXT NOT NULL DEFAULT 'manual' CHECK (source = 'manual'),
+  CHECK ((kind = 'bloodPressure') = (secondary IS NOT NULL))
+);
+CREATE INDEX measurements_time ON measurements(measured_at);
+
+CREATE TABLE journal_notes (
+  id TEXT NOT NULL PRIMARY KEY,
+  occurred_at INTEGER NOT NULL,
+  recorded_at INTEGER NOT NULL,
+  body TEXT NOT NULL CHECK (length(trim(body)) > 0)
+);
+CREATE INDEX journal_notes_time ON journal_notes(occurred_at);
+
+CREATE TABLE audit_events (
+  id TEXT NOT NULL PRIMARY KEY,
+  record_type TEXT NOT NULL,
+  record_id TEXT NOT NULL,
+  action_code TEXT NOT NULL,
+  recorded_at INTEGER NOT NULL
+);
+CREATE INDEX audit_events_record ON audit_events(record_type, record_id, recorded_at);
+
+CREATE TABLE journal_settings (
+  singleton INTEGER NOT NULL PRIMARY KEY CHECK (singleton = 1),
+  weight_unit TEXT NOT NULL DEFAULT 'kg' CHECK (weight_unit IN ('kg','lb')),
+  temperature_unit TEXT NOT NULL DEFAULT 'celsius' CHECK (temperature_unit IN ('celsius','fahrenheit')),
+  glucose_unit TEXT NOT NULL DEFAULT 'mmol/L' CHECK (glucose_unit IN ('mmol/L','mg/dL')),
+  appearance TEXT NOT NULL DEFAULT 'system' CHECK (appearance IN ('system','light','dark'))
+);
+
+CREATE TABLE symptom_tags (
+  symptom_id TEXT NOT NULL REFERENCES symptom_entries(id),
+  tag TEXT NOT NULL CHECK (length(trim(tag)) > 0),
+  PRIMARY KEY (symptom_id, tag)
+);

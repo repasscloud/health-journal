@@ -5,26 +5,35 @@ Updated 19 November 2026. This roadmap follows the five milestones in the
 [implementation status](IMPLEMENTATION_STATUS.md) for build and test evidence.
 
 **Current position.** Foundation and record workflows are in progress. The
-fictional Android review and web demo can be used today. The isolated encrypted
-medication history has passed host tests and an Android emulator release
-upgrade and restart. Native personal record entry remains gated.
+fictional Android review and web demo can be used today. Encrypted recovery and the v3 schema have host acceptance coverage. The
+Android emulator has passed the encrypted medication upgrade and restart. Native personal record entry remains gated.
 
 ## 0. Foundation and encrypted storage
 
 - [x] Scaffold iOS, Android and web. Verify the fictional web demo resets on
   full reload, isolates tabs and leaves journal records out of browser storage.
+  *No dedicated issue.*
 - [x] Verify the encrypted medication event upgrade from Drift v1 to v2,
   including host rollback and unsupported-version preservation. Verify the
   Android emulator release upgrade and reopen through the platform key store.
+  *No dedicated issue.*
 - [ ] Exercise the migration on a disposable iOS simulator. Verify native
   release encryption, key reuse and file protection on supported physical
   iOS and Android devices, including locked-device and unlock-change cases.
   The last iPhone release attempt hit a registered-device provisioning limit.
-- [ ] Test process death during migration and add an independent encrypted
-  recovery snapshot. Verify the database, WAL and temporary-file lifecycle.
-- [ ] Complete schema and migration coverage for the remaining record types.
-  Enable the native single-profile bootstrap after the storage and recovery
-  checks pass.
+  [#3](https://github.com/repasscloud/health-journal/issues/3)
+- [x] Test process death before migration commit in host WAL and rollback
+  modes. Verify the independent encrypted recovery snapshot and scan the
+  database and present sidecars. Verify SQLite temporary storage uses memory.
+  [#4](https://github.com/repasscloud/health-journal/issues/4)
+- [x] Add v3 foundation tables and test encrypted v1 and v2 upgrades.
+  Verify explicit, idempotent single-profile bootstrap in the isolated store.
+  [#5](https://github.com/repasscloud/health-journal/issues/5)
+- [ ] Connect Start Fresh to production after mobile storage and recovery
+  security acceptance. Physical Android acceptance includes hardware-backed
+  key behaviour, locked-device behaviour and changes to the unlock credential.
+  [#5](https://github.com/repasscloud/health-journal/issues/5), [#3](https://github.com/repasscloud/health-journal/issues/3)
+
 
 **Exit:** Native mobile can initialize and reopen one encrypted profile safely.
 The web demo remains fictional and volatile.
@@ -33,20 +42,29 @@ The web demo remains fictional and volatile.
 
 - [x] Build fictional medication catalogue, regimen and explicit intake
   workflows, symptom entry with pain markers, manual measurements and Timeline.
+  *No dedicated issue.*
 - [x] Show read-only Timeline symptom detail using each marker’s saved
   front/back asset and coordinates. Verify v1 and v2 artwork and text labels.
+  *No dedicated issue.*
 - [ ] Wire catalogue, regimens, administrations, symptoms, pain markers and
   measurements to the encrypted native repository. Complete restart tests for
   each record type, including history after edits and corrections.
+  [#16](https://github.com/repasscloud/health-journal/issues/16)
 - [ ] Complete schedule rule editing, occurrence linkage, original event
   timezone/offset and daylight-saving behaviour. Keep schedules independent
   of explicitly confirmed administration status.
+  [#17](https://github.com/repasscloud/health-journal/issues/17)
 - [ ] Complete symptom editing and audit history, marker movement and areas,
   richer symptom metadata, and Timeline date filtering, pagination and
   descriptive trends.
+  [#18](https://github.com/repasscloud/health-journal/issues/18)
 - [ ] Fix and verify the Android **Save symptom** button overlap with system
   navigation. Cover three-button and gesture navigation alongside larger text.
   [Review screenshot](docs/test_results/20261119_104903-save-sympton-button-hidden-behind-android-overlay-buttons.png)
+  [#1](https://github.com/repasscloud/health-journal/issues/1)
+- [ ] Improve body-region button spacing and alignment on the symptom form.
+  Verify the layout at narrow widths and larger text sizes.
+  [#2](https://github.com/repasscloud/health-journal/issues/2)
 
 **Exit:** Users can enter, review and correct core records offline on mobile.
 Records survive restart, and historical markers remain aligned.
@@ -56,9 +74,11 @@ Records survive restart, and historical markers remain aligned.
 - [ ] Add opt-in local notifications with bounded scheduling, explicit action
   confirmation, privacy controls and permission handling. Test rescheduling
   after reboot and timezone or daylight-saving changes.
+  [#6](https://github.com/repasscloud/health-journal/issues/6)
 - [ ] Implement optional PIN and biometric unlock, fallback and throttling,
   background and inactivity locking, and app-switcher privacy. Test denied or
   changed biometric enrollment and device credential changes.
+  [#7](https://github.com/repasscloud/health-journal/issues/7)
 
 **Exit:** Reminder delivery never records intake automatically, and configured
 app locks protect access on both mobile platforms.
@@ -68,15 +88,19 @@ app locks protect access on both mobile platforms.
 - [ ] Generate local PDF reports and CSV exports. Render versioned pain markers
   from saved coordinates, verify pagination and provenance, and integrate OS
   file picker and share workflows.
+  [#8](https://github.com/repasscloud/health-journal/issues/8)
 - [ ] Implement password-only portable encrypted backups with a versioned,
   authenticated header. Benchmark the password derivation on supported devices
   and test malformed files, tampering and wrong passwords.
+  [#9](https://github.com/repasscloud/health-journal/issues/9)
 - [ ] Implement preview and staged restore for a fresh install or an explicitly
   confirmed replacement. Verify crash recovery, cancellation, preservation of
   the existing journal on failure, and restoration in both iOS/Android
   directions using only the file and its password.
+  [#10](https://github.com/repasscloud/health-journal/issues/10)
 - [ ] Finish backup password change semantics and local data deletion.
   Keep device credentials separate from portable backups.
+  [#11](https://github.com/repasscloud/health-journal/issues/11)
 
 **Exit:** A user can export a readable report and restore an encrypted backup
 to a replacement phone without the original device.
@@ -86,12 +110,16 @@ to a replacement phone without the original device.
 - [ ] Run physical-device accessibility, screen-reader, large-text, offline,
   lifecycle and supported-OS checks. Verify browser demo behaviour across the
   supported mobile and desktop browsers.
+  [#12](https://github.com/repasscloud/health-journal/issues/12)
 - [ ] Complete migration and backup compatibility testing and verify privacy,
   storage permissions, platform backup exclusions and release disclosures.
+  [#13](https://github.com/repasscloud/health-journal/issues/13)
 - [ ] Finalize publisher details, support and privacy URLs, iOS identity and
   signing, Android release signing, store assets and release CI.
+  [#14](https://github.com/repasscloud/health-journal/issues/14)
 - [ ] Pass the [acceptance matrix](05-IMPLEMENTATION-PLAN-AND-TESTS.md#2-required-acceptance-tests)
   for supported targets and record the evidence before release.
+  [#15](https://github.com/repasscloud/health-journal/issues/15)
 
 **Exit:** Signed mobile releases and the public fictional demo pass their
 respective acceptance checks.

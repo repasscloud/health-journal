@@ -4,6 +4,8 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:health_journal/data/repositories/native_medication_history.dart';
+import 'package:health_journal/data/schema/journal_database.dart'
+    show JournalDatabase;
 import 'package:health_journal/domain/medication.dart';
 import 'package:health_journal/platform/security/native_store.dart';
 import 'package:sqlite3/sqlite3.dart';
@@ -67,7 +69,7 @@ Future<String> probe() async {
   try {
     directory = File(raw.select('PRAGMA database_list').first['file'] as String)
         .parent;
-    restart = raw.userVersion == 2;
+    restart = raw.userVersion == JournalDatabase.currentSchemaVersion;
     if (!restart) {
       verify(raw.userVersion == 0);
       seedV1(raw);
@@ -82,7 +84,7 @@ Future<String> probe() async {
       (await db.customSelect('PRAGMA user_version').getSingle()).read<int>(
             'user_version',
           ) ==
-          2,
+          JournalDatabase.currentSchemaVersion,
     );
     verify(
       (await db.customSelect('PRAGMA foreign_keys').getSingle()).read<int>(
@@ -91,6 +93,9 @@ Future<String> probe() async {
           1,
     );
     verify((await db.customSelect('PRAGMA foreign_key_check').get()).isEmpty);
+    verify(File('${directory.path}/pre-upgrade-v1.db').existsSync());
+    verify(!File('${directory.path}/migration-staging.db').existsSync());
+    verify((await NativeStore.initializeProfile(db)).singleton == 1);
     final history = NativeMedicationHistory(db);
     final legacy = (await history.read('probe-v1'))!;
     verify(
