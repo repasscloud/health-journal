@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -90,4 +92,106 @@ void main() {
     expect(reopened.symptoms.single.id, 'original');
     expect((await target.select(target.profile).get()).length, 1);
   });
+
+  test(
+    'process death inside replacement preserves the old encrypted journal',
+    () async {
+      final directory = Directory.systemTemp.createTempSync(
+        'fictional_restore_interrupt_',
+      );
+      addTearDown(() => directory.deleteSync(recursive: true));
+      final sourceDir = Directory('${directory.path}/source')..createSync();
+      final targetDir = Directory('${directory.path}/target')..createSync();
+      final keys = MemoryKeyStore();
+      final source = await NativeStore.openJournalAt(
+        sourceDir,
+        MemoryKeyStore(),
+      );
+      const backup = JournalBackup();
+      const password = 'Fictional interruption test password';
+      late final File archive;
+      try {
+        await NativeStore.initializeProfile(source);
+        await source.customStatement(
+          "UPDATE profile SET name = 'Fictional replacement'",
+        );
+        archive = await File('${directory.path}/fictional.healthbak')
+            .writeAsBytes(await backup.create(source, password));
+      } finally {
+        await source.close();
+      }
+      final target = await NativeStore.openJournalAt(targetDir, keys);
+      try {
+        await target.customSelect('PRAGMA journal_mode = WAL').getSingle();
+        await NativeStore.initializeProfile(target);
+        await target.customStatement(
+          "UPDATE profile SET name = 'Fictional original'",
+        );
+      } finally {
+        await target.close();
+      }
+
+      final ready = File('${directory.path}/ready');
+      final child = await Process.start(
+        'flutter',
+        [
+          'test',
+          '--no-pub',
+          '--reporter',
+          'expanded',
+          'test/fixtures/restore_process.dart',
+        ],
+        environment: {
+          'HJ_TEST_RESTORE_KEY': keys.value!,
+          'HJ_TEST_RESTORE_TARGET': targetDir.path,
+          'HJ_TEST_RESTORE_ARCHIVE': archive.path,
+          'HJ_TEST_RESTORE_READY': ready.path,
+        },
+      );
+      final errors = child.stderr.transform(utf8.decoder).join();
+      final output = child.stdout.transform(utf8.decoder).join();
+      int? exitCode;
+      unawaited(child.exitCode.then((code) => exitCode = code));
+      final deadline = DateTime.now().add(const Duration(seconds: 20));
+      try {
+        while (!ready.existsSync() &&
+            exitCode == null &&
+            DateTime.now().isBefore(deadline)) {
+          await Future<void>.delayed(const Duration(milliseconds: 50));
+        }
+        expect(
+          ready.existsSync(),
+          isTrue,
+          reason: exitCode == null ? null : '${await errors}\n${await output}',
+        );
+        final enginePid = int.parse(ready.readAsStringSync());
+        expect(enginePid, isNot(pid));
+        expect(Process.killPid(enginePid, ProcessSignal.sigkill), isTrue);
+        expect(
+          await child.exitCode.timeout(const Duration(seconds: 5)),
+          isNot(0),
+        );
+      } finally {
+        child.kill();
+      }
+      final reopened = await NativeStore.openJournalAt(targetDir, keys);
+      try {
+        expect(
+          (await reopened.select(reopened.profile).getSingle()).name,
+          'Fictional original',
+        );
+        final preview = await backup.inspect(
+          await archive.readAsBytes(),
+          password,
+        );
+        await backup.restoreInto(reopened, preview, replaceConfirmed: true);
+        expect(
+          (await reopened.select(reopened.profile).getSingle()).name,
+          'Fictional replacement',
+        );
+      } finally {
+        await reopened.close();
+      }
+    },
+  );
 }

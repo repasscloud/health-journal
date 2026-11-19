@@ -88,8 +88,9 @@ you choose. Reminders use best-effort Android notifications. Open the journal
 after a reboot or clock change to refresh them. CSV files are readable by
 anyone who can access the export. The journal provides no medical advice.
 
-PDF reports and production backup/restore controls are still in development.
-Portable recovery will require the backup file and its password. Publisher IDs, privacy policy and support details must be
+Android supports password-encrypted backup export, preview and replacement.
+Portable recovery requires the backup file and its password. PDF reports are
+still in development. Publisher IDs, privacy policy and support details must be
 set before release. No signing team or credentials are committed.
 
 Additional fictional native store probe:

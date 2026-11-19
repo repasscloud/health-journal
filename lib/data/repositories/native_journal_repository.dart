@@ -29,6 +29,7 @@ final class NativeJournalRepository implements JournalRepository {
   final NativeMedicationHistory _doses;
   Future<void> _pending = Future.value();
   late _JournalSnapshot _snapshot;
+  Future<void> get pendingWrites => _pending;
 
   Future<void> _write(Future<void> Function() write) {
     final result = _pending.then((_) async {

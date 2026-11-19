@@ -28,6 +28,7 @@ class JournalApp extends StatefulWidget {
     this.privacySettings,
     this.reminderSettings,
     this.exportSettings,
+    this.openBackup,
     this.onJournalChanged,
     this.messengerKey,
     this.usePhonePreview = false,
@@ -37,7 +38,7 @@ class JournalApp extends StatefulWidget {
   final bool usePhonePreview;
   final GlobalKey<ScaffoldMessengerState>? messengerKey;
   final WidgetBuilder? privacySettings, reminderSettings, exportSettings;
-  final VoidCallback? onJournalChanged;
+  final VoidCallback? onJournalChanged, openBackup;
   @override
   State<JournalApp> createState() => _JournalAppState();
 }
@@ -64,6 +65,7 @@ class _JournalAppState extends State<JournalApp> {
             privacySettings: widget.privacySettings,
             reminderSettings: widget.reminderSettings,
             exportSettings: widget.exportSettings,
+            openBackup: widget.openBackup,
             onJournalChanged: widget.onJournalChanged,
           ),
         ),
@@ -131,12 +133,13 @@ class JournalHome extends StatefulWidget {
     this.privacySettings,
     this.reminderSettings,
     this.exportSettings,
+    this.openBackup,
     this.onJournalChanged,
   });
   final AppEnvironment environment;
   final ValueNotifier<ThemeMode> themeMode;
   final WidgetBuilder? privacySettings, reminderSettings, exportSettings;
-  final VoidCallback? onJournalChanged;
+  final VoidCallback? onJournalChanged, openBackup;
   @override
   State<JournalHome> createState() => _JournalHomeState();
 }
@@ -833,10 +836,15 @@ class _JournalHomeState extends State<JournalHome> {
                     MaterialPageRoute(builder: widget.privacySettings!),
                   ),
           ),
-          const ListTile(
-            leading: JournalIcon(Icons.backup_outlined),
-            title: Text('Backup and restore'),
-            subtitle: Text('Encrypted backups and restore are unavailable.'),
+          ListTile(
+            leading: const JournalIcon(Icons.backup_outlined),
+            title: const Text('Backup and restore'),
+            subtitle: Text(
+              widget.openBackup == null
+                  ? 'Encrypted backups and restore are unavailable.'
+                  : 'Manage password-encrypted backups',
+            ),
+            onTap: widget.openBackup,
           ),
           ListTile(
             leading: const JournalIcon(Icons.description_outlined),

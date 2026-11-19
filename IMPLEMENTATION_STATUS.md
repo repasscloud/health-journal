@@ -697,3 +697,20 @@ See [ADR 0010](docs/adr/0010-portable-backup-container.md).
   focus failure without changing the reset and isolation assertions.
 
 See [ADR 0011](docs/adr/0011-android-reminders-and-document-output.md).
+
+## Android backup and restore UI
+
+Android can create a password-encrypted backup through the document picker,
+authenticate and preview a selected file, and restore it. A populated journal
+requires the user to type REPLACE. The backup carries no local PIN credentials.
+On the Galaxy A14 5G, the isolated release saved an encrypted file, rejected
+an incorrect password, and replaced a two-measurement test journal with the
+one-measurement backup. An initial run exposed a read-only platform byte
+buffer during cleanup. The app now discards the ciphertext reference, and
+replacement passed on the rebuilt release.
+
+The host killed a separate Flutter process after the restore transaction
+began replacing rows. The previous encrypted journal reopened and retry
+succeeded. The analyzer and all 80 Flutter tests passed. Fresh-install UI
+verification on Android is pending handset unlock. See the
+[release acceptance checkpoint](docs/release-acceptance.md).

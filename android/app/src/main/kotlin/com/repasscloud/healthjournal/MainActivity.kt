@@ -62,8 +62,12 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "health_journal/documents").setMethodCallHandler { call, result ->
-            if (call.method == "saveCsv") documents.saveCsv(call.arguments as? ByteArray, result)
-            else result.notImplemented()
+            when (call.method) {
+                "saveCsv" -> documents.saveCsv(call.arguments as? ByteArray, result)
+                "saveBackup" -> documents.saveBackup(call.arguments as? ByteArray, result)
+                "openBackup" -> documents.openBackup(result)
+                else -> result.notImplemented()
+            }
         }
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,

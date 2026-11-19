@@ -7,7 +7,7 @@
 - Android foundation and the shared native record composition are active.
   Issue #2 is closed. Issue #1 has physical Android review and production evidence, with iOS deferred. Issues #3, #5 and #16–#18
   retain open acceptance criteria.
-- Flutter 3.47.9, 78 Flutter tests, analyzer, web release and two Chrome
+- Flutter 3.47.9, 80 Flutter tests, analyzer, web release and two Chrome
   Playwright cases passed. See [implementation status](IMPLEMENTATION_STATUS.md)
   for physical storage and production-path evidence. No iOS tests were run.
 - The physical Galaxy A14 5G is `R9WW30CSG1K`. The shared app ID exists.
@@ -21,12 +21,13 @@
   timed delivery verification and iOS remain open.
 - Android #8 CSV save through Downloads passed with fictional data. PDF and
   iOS export remain open.
-- Next active issues are #9/#10 production backup and restore controls, using
-  the verified backend and Android document-provider integration. The backend
-  passed host validation and a fictional Android file round trip. Production
-  handoff, preview/confirmation controls and crash-device tests are pending.
-  #11 deletion and #12–#15 hardening remain open. iOS runtime, signing and
-  hardware acceptance remain deferred.
+- Android #9/#10 production backup, password rejection, preview and populated
+  replacement passed through the document picker. Host process-kill recovery
+  passed. Fresh-install UI verification is pending handset unlock. The cleared
+  disposable package and fictional Downloads archive are ready.
+- Next independent work includes #8 PDF, #11 journal deletion, and #12–#15
+  hardening. Android distribution signing passed with a disposable certificate.
+  iOS platform acceptance and actual publication remain deferred.
 
 ```sh
 flutter analyze

@@ -7,10 +7,12 @@ import 'package:flutter/services.dart';
 import '../data/repositories/native_journal_repository.dart';
 import '../data/schema/journal_database.dart';
 import '../domain/reminder_plan.dart';
+import '../features/backup/backup_page.dart';
 import '../features/reminder_settings.dart';
 import '../features/reports/journal_csv.dart';
 import '../features/reports/journal_export.dart';
 import '../features/security_pin_form.dart';
+import '../platform/backup/journal_backup.dart';
 import '../platform/security/journal_pin.dart';
 import '../platform/security/native_store.dart';
 import '../platform/security/secure_installation_key_store.dart';
@@ -33,6 +35,11 @@ class AndroidJournal extends StatefulWidget {
 
 class _AndroidJournalState extends State<AndroidJournal>
     with WidgetsBindingObserver {
+  static const _documents = MethodChannel('health_journal/documents');
+  static const _backup = JournalBackup();
+  bool _backupMode = false, _backupBusy = false;
+  Uint8List? _backupBytes;
+  String? _backupMessage;
   final _messenger = GlobalKey<ScaffoldMessengerState>();
   bool _exporting = false;
   String? _exportResult;
@@ -77,14 +84,142 @@ class _AndroidJournalState extends State<AndroidJournal>
     }
   }
 
+  void _openBackup() {
+    if (_locked || _database == null) return;
+    setState(() {
+      _backupMode = true;
+      _backupMessage = null;
+    });
+  }
+
+  void _discardBackup() {
+    setState(() {
+      _backupBytes = null;
+      _backupMessage = null;
+    });
+  }
+
+  void _closeBackup() {
+    if (_backupBusy) return;
+    setState(() {
+      _backupBytes = null;
+      _backupMode = false;
+      _backupMessage = null;
+    });
+  }
+
+  Future<void> _pickBackup() async {
+    if (_backupBusy || _locked) return;
+    setState(() {
+      _backupBusy = true;
+      _backupMessage = null;
+    });
+    try {
+      final bytes = await _documents.invokeMethod<Uint8List>('openBackup');
+      if (!mounted) return;
+      // Platform replies may expose a read-only view. The archive is ciphertext.
+      _backupBytes = bytes;
+    } catch (_) {
+      _backupMessage = 'Could not read the chosen backup.';
+    } finally {
+      if (mounted) setState(() => _backupBusy = false);
+    }
+  }
+
+  Future<JournalBackupPreview> _inspectBackup(String password) async {
+    final bytes = _backupBytes;
+    if (_locked || _backupBusy || bytes == null) {
+      throw StateError('No backup can be opened.');
+    }
+    setState(() {
+      _backupBusy = true;
+      _backupMessage = null;
+    });
+    try {
+      return await _backup.inspect(bytes, password);
+    } finally {
+      if (mounted) setState(() => _backupBusy = false);
+    }
+  }
+
+  Future<void> _createBackup(String password) async {
+    final db = _database;
+    if (_locked || _backupBusy || db == null) return;
+    setState(() {
+      _backupBusy = true;
+      _backupMessage = null;
+    });
+    Uint8List? bytes;
+    try {
+      await _repository?.pendingWrites;
+      bytes = await _backup.create(db, password);
+      if (!mounted || _locked) return;
+      final saved = await _documents.invokeMethod<bool>('saveBackup', bytes);
+      if (saved == true) {
+        _backupMessage = 'Backup saved to the chosen location.';
+      }
+    } catch (_) {
+      _backupMessage = 'Could not save the backup.';
+    } finally {
+      bytes?.fillRange(0, bytes.length, 0);
+      if (mounted) setState(() => _backupBusy = false);
+    }
+  }
+
+  Future<void> _restoreBackup(
+    JournalBackupPreview preview,
+    bool replaceConfirmed,
+  ) async {
+    final db = _database;
+    if (_locked || _backupBusy || db == null) return;
+    setState(() {
+      _backupBusy = true;
+      _backupMessage = null;
+    });
+    var committed = false;
+    try {
+      await _repository?.pendingWrites;
+      if (!mounted || _locked) return;
+      await _backup.restoreInto(
+        db,
+        preview,
+        replaceConfirmed: replaceConfirmed,
+      );
+      committed = true;
+      final repository = await NativeJournalRepository.load(db);
+      if (!mounted) return;
+      setState(() {
+        _repository = repository;
+        _exportResult = 'Journal restored.';
+        _backupMode = false;
+        _backupBytes = null;
+      });
+      _queueReminders();
+      _showExportResult();
+    } catch (_) {
+      if (committed) {
+        _repository = null;
+        _database = null;
+        _failed = true;
+        _backupMode = false;
+        _backupBytes = null;
+        await db.close();
+      } else {
+        _backupMessage =
+            'Could not restore the backup. The current journal is unchanged.';
+      }
+    } finally {
+      if (mounted) setState(() => _backupBusy = false);
+    }
+  }
+
   Future<void> _exportCsv() async {
     final repository = _repository;
     if (_exporting || _locked || repository == null) return;
     setState(() => _exporting = true);
     final bytes = journalCsv(repository);
     try {
-      final saved = await const MethodChannel('health_journal/documents')
-          .invokeMethod<bool>('saveCsv', bytes);
+      final saved = await _documents.invokeMethod<bool>('saveCsv', bytes);
       _exportResult = saved == true
           ? 'CSV saved to the chosen location.'
           : null;
@@ -218,6 +353,7 @@ class _AndroidJournalState extends State<AndroidJournal>
   void dispose() {
     _idle?.cancel();
     _reminderRefresh?.cancel();
+    _backupBytes = null;
     WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_onKey);
     final database = _database;
@@ -237,6 +373,33 @@ class _AndroidJournalState extends State<AndroidJournal>
       );
     }
     final repository = _repository;
+    if (!_locked && _backupMode && _database != null) {
+      return Listener(
+        onPointerDown: (_) => _resetIdle(),
+        onPointerMove: (_) => _resetIdle(),
+        onPointerSignal: (_) => _resetIdle(),
+        child: MaterialApp(
+          debugShowCheckedModeBanner: false,
+          theme: journalTheme(Brightness.light),
+          darkTheme: journalTheme(Brightness.dark),
+          themeMode: ThemeMode.values.byName(
+            repository?.preferences.appearance.name ?? 'system',
+          ),
+          home: BackupPage(
+            populated: repository != null,
+            busy: _backupBusy,
+            hasArchive: _backupBytes != null,
+            message: _backupMessage,
+            onClose: _closeBackup,
+            onPick: _pickBackup,
+            onDiscard: _discardBackup,
+            onCreate: _createBackup,
+            onInspect: _inspectBackup,
+            onRestore: _restoreBackup,
+          ),
+        ),
+      );
+    }
     if (!_locked && repository != null) {
       return Listener(
         onPointerDown: (_) => _resetIdle(),
@@ -247,6 +410,7 @@ class _AndroidJournalState extends State<AndroidJournal>
           onJournalChanged: _queueReminders,
           messengerKey: _messenger,
           exportSettings: (_) => JournalExport(onExport: _exportCsv),
+          openBackup: _openBackup,
           reminderSettings: (_) =>
               ReminderSettings(onPermissionChanged: _queueReminders),
           privacySettings: (_) =>
@@ -297,6 +461,11 @@ class _AndroidJournalState extends State<AndroidJournal>
                               : _startFresh,
                           child: Text(_failed ? 'Try again' : 'Start fresh'),
                         ),
+                        if (!_failed)
+                          OutlinedButton(
+                            onPressed: _openBackup,
+                            child: const Text('Restore existing backup'),
+                          ),
                       ],
                     ),
             ),
