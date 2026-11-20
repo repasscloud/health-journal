@@ -867,3 +867,23 @@ notifications. WebKit used a fresh persistent Playwright profile because its
 ephemeral context rejected OPFS inspection. Flutter analysis and 29 focused
 host tests passed. Installed Safari, physical mobile browsers, PWA
 installation, and deployed HTTPS hosting remain outside this run.
+
+## Android Settings erasure — 2026-11-20
+
+Android Settings → Privacy & security offers **Delete all local data**.
+With a configured journal PIN, the action uses the existing throttled PIN
+verifier after typed confirmation. With the PIN disabled, typed confirmation
+is sufficient. The forgotten-PIN recovery keeps its separate erase path.
+Both use Android's app data reset and explain that backup, PDF and CSV files
+at user-selected destinations remain there.
+
+On the dedicated `HJ_P45_Fictional_20261120` API 35 arm64 emulator
+(system build 12960925), the isolated production release accepted a
+fictional PIN, rejected deletion with the wrong PIN after typing `ERASE`,
+and accepted deletion after the correct PIN and typed confirmation.
+Cold launch showed **Start fresh** and **Restore existing backup** without
+the former PIN screen. Tested APK SHA-256
+`402916d220f9911aae827af9ca250844a256e0b1025cbfaefcb8e5907aa48750`
+was built from the code recorded as `122577c`.
+Static analysis and four focused PIN/confirmation tests passed.
+See [ADR 0012](docs/adr/0012-android-forgotten-pin-reset.md).
