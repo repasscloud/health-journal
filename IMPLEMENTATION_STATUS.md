@@ -743,3 +743,12 @@ local development signing.
   on an API 35 emulator verified the action gap and Android Back from both entry
   points. Widget tests verify password visibility, live validation, and typed
   replacement confirmation.
+
+## Android forgotten PIN reset — 2026-11-20
+
+- The Android unlock screen offers a destructive reset after the user types
+  `ERASE` and confirms. Android clears the app's private data. Reopening offers
+  Start fresh or Restore existing backup. See [ADR 0012](docs/adr/0012-android-forgotten-pin-reset.md).
+- Flutter analysis and all 84 tests passed. A disposable API 35 emulator
+  verified cancellation, the confirmed reset, both onboarding choices and
+  creation of a fresh journal. Signed production APK built successfully.

@@ -36,6 +36,7 @@ class AndroidJournal extends StatefulWidget {
 class _AndroidJournalState extends State<AndroidJournal>
     with WidgetsBindingObserver {
   static const _documents = MethodChannel('health_journal/documents');
+  static const _appReset = MethodChannel('health_journal/app_reset');
   static const _backup = JournalBackup();
   bool _backupBusy = false, _backupOpen = false;
   var _journalNavigator = GlobalKey<NavigatorState>();
@@ -403,7 +404,14 @@ class _AndroidJournalState extends State<AndroidJournal>
         theme: journalTheme(Brightness.light),
         darkTheme: journalTheme(Brightness.dark),
         key: const ValueKey('locked'),
-        home: JournalPinForm(enabled: true, unlock: true, onSubmit: _unlock),
+        home: JournalPinForm(
+          enabled: true,
+          unlock: true,
+          onSubmit: _unlock,
+          onErase: () async =>
+              _locked &&
+              await _appReset.invokeMethod<bool>('eraseAppData') == true,
+        ),
       );
     }
     final repository = _repository;
