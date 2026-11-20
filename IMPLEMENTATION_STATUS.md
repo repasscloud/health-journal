@@ -825,3 +825,7 @@ passed with the optional full-filesystem case enabled, and both Playwright
 web reload/isolation checks passed. Physical-device matrix and iOS restart
 evidence remain open for records. Symptom/Timeline still needs supported-device
 screen-reader acceptance.
+
+Android Settings now opens with **Reports and exports** and explicitly lists
+the 30-day PDF and CSV options. A widget regression verifies the entry and
+PDF save action are reachable without scrolling at 320 × 640.

@@ -791,6 +791,20 @@ class _JournalHomeState extends State<JournalHome> {
   }
 
   List<Widget> settings() => [
+    if (widget.exportSettings case final exports?) ...[
+      Card(
+        child: ListTile(
+          leading: const JournalIcon(Icons.description_outlined),
+          title: const Text('Reports and exports'),
+          subtitle: const Text('Save or share a 30-day PDF, or export CSV'),
+          onTap: () => Navigator.push<void>(
+            context,
+            MaterialPageRoute(builder: exports),
+          ),
+        ),
+      ),
+      const SizedBox(height: 16),
+    ],
     section('Units'),
     unitControl(
       kind: MeasurementKind.weight,
@@ -855,21 +869,12 @@ class _JournalHomeState extends State<JournalHome> {
                     MaterialPageRoute(builder: widget.backupSettings!),
                   ),
           ),
-          ListTile(
-            leading: const JournalIcon(Icons.description_outlined),
-            title: const Text('Reports and exports'),
-            subtitle: Text(
-              widget.exportSettings == null
-                  ? 'Report generation and health imports are unavailable.'
-                  : 'Save a CSV file',
+          if (widget.exportSettings == null)
+            ListTile(
+              leading: const JournalIcon(Icons.description_outlined),
+              title: const Text('Reports and exports'),
+              subtitle: const Text('Report generation is unavailable.'),
             ),
-            onTap: widget.exportSettings == null
-                ? null
-                : () => Navigator.push<void>(
-                    context,
-                    MaterialPageRoute(builder: widget.exportSettings!),
-                  ),
-          ),
           ListTile(
             leading: const JournalIcon(Icons.notifications_none),
             title: const Text('Reminders'),
