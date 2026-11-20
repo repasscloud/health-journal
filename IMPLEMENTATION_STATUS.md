@@ -719,3 +719,13 @@ New backups are authenticated by reopening the ciphertext before the app hands
 it to the document picker. A regression test verifies that a new backup
 password opens only the new file while the prior file still requires its
 original password. All 81 Flutter tests passed.
+
+## 20 November 2026 — Fresh restore and device installation
+
+The cleared isolated Android release restored the fictional Downloads
+archive from first-run setup and displayed the expected 72.5 kg measurement
+and medication schedule. After verification, the legacy review, shared-ID
+review and isolated test packages were removed. The standard production
+release built from `be0c9fb` was installed and cold-launched to the initial
+setup screen. Android listed a single Health Journal package. The APK uses
+local development signing.

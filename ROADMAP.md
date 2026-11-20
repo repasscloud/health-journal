@@ -125,8 +125,8 @@ app locks protect access on both mobile platforms.
   confirmed replacement. Verify crash recovery, cancellation, preservation of
   the existing journal on failure, and restoration in both iOS/Android
   directions using only the file and its password. Android populated
-  replacement passed on the Galaxy A14 5G. Fresh-install device UI and
-  cross-platform transfer remain open.
+  replacement and fresh-install restore passed on the Galaxy A14 5G.
+  Cross-platform transfer remains open.
   [#10](https://github.com/repasscloud/health-journal/issues/10)
 - [ ] Finish backup password change semantics and local data deletion.
   New exports use a password chosen per file. Prior files retain their

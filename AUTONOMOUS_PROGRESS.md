@@ -1,6 +1,6 @@
 # Autonomous development checkpoint
 
-19 November 2026, Australia/Adelaide.
+20 November 2026, Australia/Adelaide.
 
 - Latest validated code is the commit carrying this checkpoint. Run
   `git log -1 --oneline` for the exact revision.
@@ -23,8 +23,9 @@
   iOS export remain open.
 - Android #9/#10 production backup, password rejection, preview and populated
   replacement passed through the document picker. Host process-kill recovery
-  passed. Fresh-install UI verification is pending handset unlock. The cleared
-  disposable package and fictional Downloads archive are ready.
+  passed. Fresh-install restore also passed on the Galaxy A14 5G. The
+  disposable and review packages were removed, and the production release
+  was installed and verified at the initial setup screen.
 - Next independent work includes #8 PDF, #11 journal deletion, and #12–#15
   hardening. Android distribution signing passed with a disposable certificate.
   iOS platform acceptance and actual publication remain deferred.
