@@ -87,8 +87,10 @@ a build alone is insufficient. This target replaces the development app with a p
 so use a dedicated test installation, never a personal-record installation.
 
 Android production stores the journal and user preferences locally. It offers
-an optional journal PIN, per-regimen reminders, a local 30-day PDF report, and a
-full CSV export. Save either file to a location you choose or share the PDF
+an optional journal PIN, opt-in strong biometric unlock on compatible Android
+11+ devices, per-regimen reminders, a local 30-day PDF report, and a full CSV
+export. Android production conceals journal views from Overview and blocks
+screenshots and screen recording. Save either file to a location you choose or share the PDF
 through Android. Reminders use best-effort Android notifications. After reboot, Android can replay the remaining plan in the same time zone.
 Open the journal periodically and after changing the clock or time zone to
 refresh it. Exported PDFs and CSVs are readable by
@@ -116,7 +118,8 @@ device acceptance. Native personal-record entry stays gated regardless of simula
 `tool/native_migration_probe.dart` is a separate release entry point for a
 disposable emulator where `com.repasscloud.healthjournal` is absent. Its
 `FICTIONAL_V1_SQL_BASE64` Dart define is the Base64-encoded UTF-8 JSON list of
-SQLite statements from `test/fixtures/schema_v1.json` under `fixed_sql`. Build
+SQLite statement strings extracted from each `fixed_sql` entity's
+`sql[].sql` field in `test/fixtures/schema_v1.json`. Build
 it with the production flavor so the native protected directory and secure key
 adapter are available. Keep its artifact separate from the normal production
 APK and explicitly select the verified emulator serial for installation.
