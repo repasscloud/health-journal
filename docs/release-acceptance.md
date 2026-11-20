@@ -28,7 +28,7 @@ separately. iOS platform results are deferred. Methods and outcomes are in
 | SECURITY-03 | Android rejected a wrong PIN. Host tests cover persisted throttling and authenticated removal. | Biometric denial, fallback and enrollment change. |
 | BACKUP-01 | Android restored a password-only file into a distinct key in the release probe. | iOS to Android physical transfer. |
 | BACKUP-02 | Local Android archives open with file and password. | Android to iOS physical transfer. |
-| BACKUP-03 | Host authenticated tamper, wrong password and truncation tests pass. Android release rejected a wrong password. | Expanded malicious-file and low-memory device matrix. |
+| BACKUP-03 | Host authenticated tamper, wrong password, malformed and oversized headers, and every truncated prefix pass. Android release rejected a wrong password. Physical Android KDF results and artifact hash are in implementation status. | Low-memory Android and physical iOS coverage. |
 | BACKUP-04 | Typed confirmation is widget-tested. Host tests preserve the previous journal when confirmation or insert fails. | See the latest Android document-picker evidence in implementation status. |
 | BACKUP-05 | Host Flutter child was killed after deleting and inserting inside a restore transaction. The original reopened and retry passed. | Physical process interruption and replacement-device matrix. |
 | BACKUP-06 | Each export prompts for its own password and the document picker creates a new file. | Physical two-password round trip. |
