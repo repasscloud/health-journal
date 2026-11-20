@@ -106,4 +106,59 @@ void main() {
       expect(find.textContaining('Check your PIN'), findsOneWidget);
     },
   );
+  testWidgets(
+    'failed biometrics leave PIN reachable at large text in landscape',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(720, 420));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      var biometricAttempts = 0;
+      final pins = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(context)
+                .copyWith(textScaler: TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: JournalPinForm(
+            enabled: true,
+            unlock: true,
+            onSubmit: (pin, _) async {
+              pins.add(pin);
+              return true;
+            },
+            onBiometricUnlock: () async {
+              biometricAttempts++;
+              return false;
+            },
+          ),
+        ),
+      );
+
+      final biometric = find.widgetWithText(
+        OutlinedButton,
+        'Unlock with biometrics',
+      );
+      await tester.ensureVisible(biometric);
+      await tester.tap(biometric);
+      await tester.pumpAndSettle();
+      expect(biometricAttempts, 1);
+      expect(pins, isEmpty);
+      expect(find.textContaining('Use your journal PIN'), findsOneWidget);
+
+      final pin = find.widgetWithText(TextFormField, 'Journal PIN');
+      await tester.ensureVisible(pin);
+      await tester.enterText(pin, '123456');
+      tester.view.viewInsets = const FakeViewPadding(bottom: 110);
+      addTearDown(tester.view.resetViewInsets);
+      await tester.pumpAndSettle();
+      final unlock = find.widgetWithText(FilledButton, 'Unlock');
+      await tester.ensureVisible(unlock);
+      await tester.pumpAndSettle();
+      await tester.tap(unlock);
+      await tester.pumpAndSettle();
+      expect(pins, ['123456']);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }

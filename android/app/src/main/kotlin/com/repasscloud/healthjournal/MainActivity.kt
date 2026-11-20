@@ -15,6 +15,12 @@ import java.util.TimeZone
 
 class MainActivity : FlutterActivity() {
     private val documents = JournalDocuments(this)
+    private val biometrics = JournalBiometrics(this)
+
+    override fun onStop() {
+        biometrics.cancel()
+        super.onStop()
+    }
 
     @Deprecated("Deprecated in the Android Activity API")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -40,11 +46,7 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.FLAVOR == "production") {
             documents.removeInterruptedShares()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                setRecentsScreenshotEnabled(false)
-            } else {
-                window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            }
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
         super.onCreate(savedInstanceState)
     }
@@ -69,6 +71,10 @@ class MainActivity : FlutterActivity() {
         // storage/key plugins or the protected-directory channel for this flavor.
         if (BuildConfig.FLAVOR == "review") return
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "health_journal/biometrics").setMethodCallHandler { call, result ->
+            biometrics.handle(call.method, result)
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "health_journal/app_reset").setMethodCallHandler { call, result ->
             if (call.method != "eraseAppData") {

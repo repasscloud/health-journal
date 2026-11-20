@@ -11,11 +11,17 @@ class JournalPinForm extends StatefulWidget {
     this.unlock = false,
     this.onErase,
     this.onEraseWithPin,
+    this.onBiometricUnlock,
+    this.onConfigureBiometrics,
+    this.biometricsEnabled = false,
   });
 
   final bool enabled, unlock;
   final Future<bool> Function()? onErase;
   final Future<bool> Function(String current)? onEraseWithPin;
+  final Future<bool> Function()? onBiometricUnlock;
+  final Future<bool> Function(String current)? onConfigureBiometrics;
+  final bool biometricsEnabled;
   final Future<bool> Function(String current, String next) onSubmit;
 
   @override
@@ -67,6 +73,39 @@ class _JournalPinFormState extends State<JournalPinForm> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _useBiometrics() async {
+    if (_busy) return;
+    final configure = widget.onConfigureBiometrics;
+    final unlock = widget.onBiometricUnlock;
+    if (configure != null && !JournalPin.isValid(_current.text)) {
+      setState(() => _error = 'Enter your current journal PIN first.');
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    var success = false;
+    try {
+      success = configure != null
+          ? await configure(_current.text)
+          : await unlock!();
+    } catch (_) {
+      // Keep the journal PIN available when Android authentication fails.
+    }
+    if (!mounted) return;
+    _current.clear();
+    setState(() {
+      _busy = false;
+      if (!success) {
+        _error = widget.unlock
+            ? 'Biometric unlock was unavailable or incomplete. Use your journal PIN.'
+            : 'Could not change biometric unlock. Check your PIN and Android biometric settings.';
+      }
+    });
   }
 
   Future<void> _confirmErase() async {
@@ -224,6 +263,18 @@ class _JournalPinFormState extends State<JournalPinForm> {
                             : 'Save PIN',
                       ),
                     ),
+                    if (widget.onBiometricUnlock != null ||
+                        widget.onConfigureBiometrics != null)
+                      OutlinedButton(
+                        onPressed: _busy ? null : _useBiometrics,
+                        child: Text(
+                          widget.unlock
+                              ? 'Unlock with biometrics'
+                              : widget.biometricsEnabled
+                              ? 'Disable biometric unlock'
+                              : 'Enable biometric unlock',
+                        ),
+                      ),
                     if (!widget.unlock && widget.onEraseWithPin != null)
                       TextButton(
                         onPressed: _busy ? null : _confirmErase,

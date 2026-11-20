@@ -15,11 +15,9 @@ separate from the random database key and the planned portable backup password.
 A forgotten PIN cannot be recovered. The locked screen offers an app reset
 after explicit confirmation. See [ADR 0012](0012-android-forgotten-pin-reset.md).
 
-Android 13 and newer disable recents screenshots through the activity API.
-Older Android versions use the secure-window flag, which also prevents user
-screenshots. This applies to production only. The web demo and fictional
-Android review have no PIN implementation. Biometric enrollment and fallback
-are deferred.
+See [ADR 0016](0016-android-biometric-unlock.md) for biometric enrollment
+and the current Android production secure-window policy. The web demo and
+fictional Android review have no journal PIN implementation.
 
 References include the [Android screenshot API](https://developer.android.com/reference/android/app/Activity#setRecentsScreenshotEnabled(boolean))
 and the [OWASP Argon2id baseline](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
