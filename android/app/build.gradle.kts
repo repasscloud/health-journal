@@ -5,6 +5,8 @@ plugins {
 }
 
 val deviceTest = providers.gradleProperty("healthJournalDeviceTest").orNull == "true"
+val backupProbe = providers.gradleProperty("healthJournalBackupProbe").orNull == "true"
+require(!backupProbe || deviceTest) { "The backup probe requires the isolated device-test build." }
 val distribution = providers.gradleProperty("healthJournalDistribution").orNull == "true"
 require(!deviceTest || !distribution) {
     "The isolated device-test package cannot use distribution signing."
@@ -58,8 +60,9 @@ android {
             dimension = "environment"
             signingConfig = distributionSigning ?: signingConfigs.getByName("debug")
             if (deviceTest) {
-                applicationIdSuffix = ".devicetest"
-                manifestPlaceholders["journalAppLabel"] = "Health Journal Device Test"
+                applicationIdSuffix = if (backupProbe) ".backupprobe" else ".devicetest"
+                manifestPlaceholders["journalAppLabel"] =
+                    if (backupProbe) "Health Journal Backup Probe" else "Health Journal Device Test"
             }
         }
         create("review") {

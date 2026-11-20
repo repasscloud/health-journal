@@ -829,3 +829,24 @@ screen-reader acceptance.
 Android Settings now opens with **Reports and exports** and explicitly lists
 the 30-day PDF and CSV options. A widget regression verifies the entry and
 PDF save action are reachable without scrolling at 320 × 640.
+
+## Android portable archive benchmark — 2026-11-20
+
+Source `2f3da1d`, Flutter 3.47.9 / Dart 3.13.7, production release
+probe with a separate package ID. On a physical Galaxy A14 5G
+(SM-A146P, Android 15/API 35, A146PXXULEZJ3, arm64), five Argon2id v19
+derivations took 753, 729, 757, 731 and 726 ms (median 731 ms).
+The V1 writer used 32,768 KiB, three iterations, one lane and a 32-byte
+key. Timings exclude isolate startup and represent elapsed time.
+Configured KDF memory is recorded here. Peak process memory was not measured.
+The probe created and flushed a 28,348-byte backup in 1,596 ms and
+inspected, restored under a different random key and reopened it in 845 ms.
+It used 365 fictional measurements and removed its app-private scratch files.
+Probe APK SHA-256 `1d46643f1d75beca4a15858ee123d284c1f945c9b25b9a26aeb6019433983cc9`.
+
+Nine focused host tests passed. They include the independent V1 vector,
+both directions of an incorrect password pairing, authentication tampering,
+the oversized file cap, every truncated prefix, malformed headers, and a
+process interruption during replacement. Existing archive parameters
+and format are unchanged. iOS and older or low-memory Android hardware
+benchmarks remain open.

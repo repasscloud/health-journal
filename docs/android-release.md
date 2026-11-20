@@ -31,3 +31,18 @@ artifact SHA-256 alongside the acceptance matrix. See the Flutter
 The signing hookup was verified with a disposable local certificate on
 19 November 2026. Publisher identity, the real upload key, store listing
 and publication approval remain release prerequisites.
+
+## Fictional Android backup benchmark
+
+```sh
+ORG_GRADLE_PROJECT_healthJournalDeviceTest=true \
+ORG_GRADLE_PROJECT_healthJournalBackupProbe=true \
+flutter build apk --release --flavor production -t tool/android_backup_probe.dart
+```
+
+Verify the application ID is `com.repasscloud.healthjournal.backupprobe`
+before installing. Launch the probe and look for
+`HEALTH_JOURNAL_BACKUP_PROOF:PASS` in Flutter's device log. No real journal
+records are needed. The probe times the Argon2id implementation separately
+from export and restore. See [implementation status](../IMPLEMENTATION_STATUS.md)
+for the device, artifact, parameters and elapsed times.
