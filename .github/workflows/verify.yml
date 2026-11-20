@@ -17,6 +17,7 @@ jobs:
       - run: dart run build_runner build
       - run: git diff --exit-code -- lib/data/schema/journal_database.g.dart
       - run: flutter analyze
+      - run: sudo apt-get update && sudo apt-get install --yes poppler-utils
       - run: flutter test
       - run: flutter build web --release
       - uses: actions/setup-node@v7

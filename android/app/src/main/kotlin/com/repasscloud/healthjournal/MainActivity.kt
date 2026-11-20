@@ -39,6 +39,7 @@ class MainActivity : FlutterActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.FLAVOR == "production") {
+            documents.removeInterruptedShares()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 setRecentsScreenshotEnabled(false)
             } else {
@@ -78,6 +79,8 @@ class MainActivity : FlutterActivity() {
             "health_journal/documents").setMethodCallHandler { call, result ->
             when (call.method) {
                 "saveCsv" -> documents.saveCsv(call.arguments as? ByteArray, result)
+                "savePdf" -> documents.savePdf(call.arguments as? ByteArray, result)
+                "sharePdf" -> documents.sharePdf(call.arguments as? ByteArray, result)
                 "saveBackup" -> documents.saveBackup(call.arguments as? ByteArray, result)
                 "openBackup" -> documents.openBackup(result)
                 else -> result.notImplemented()

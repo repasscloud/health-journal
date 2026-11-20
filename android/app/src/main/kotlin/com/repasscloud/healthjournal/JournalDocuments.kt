@@ -1,10 +1,15 @@
 package com.repasscloud.healthjournal
 
 import android.app.Activity
+import android.content.ClipData
 import android.content.Intent
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
+import androidx.core.content.FileProvider
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
+import java.io.File
 
 internal class JournalDocuments(private val activity: Activity) {
     private sealed interface Request {
@@ -19,6 +24,68 @@ internal class JournalDocuments(private val activity: Activity) {
     fun saveCsv(bytes: ByteArray?, result: MethodChannel.Result) =
         save(bytes, result, "text/csv", "health-journal.csv")
 
+    fun savePdf(bytes: ByteArray?, result: MethodChannel.Result) =
+        save(bytes, result, "application/pdf", REPORT_NAME)
+
+    fun removeInterruptedShares() {
+        // Retain a grant if Android recreated the Activity in the same process.
+        shareDirectory.listFiles()?.filterNot { it in activeShares }?.forEach { it.delete() }
+    }
+
+    fun sharePdf(bytes: ByteArray?, result: MethodChannel.Result) {
+        if (bytes == null || bytes.isEmpty() || bytes.size > MAX_DOCUMENT_BYTES) {
+            bytes?.fill(0)
+            result.error("document_size", "File size is out of bounds.", null)
+            return
+        }
+        // Keep one bounded share at a time. Existing recipients retain their
+        // open file descriptors if a subsequent share replaces the grant.
+        activeShares.toList().forEach { discardShare(it, uriFor(it)) }
+        var file: File? = null
+        var uri: Uri? = null
+        try {
+            check(shareDirectory.isDirectory || shareDirectory.mkdir())
+            file = File.createTempFile("journal-", ".pdf", shareDirectory)
+            file.writeBytes(bytes)
+            uri = uriFor(file)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = "application/pdf"
+                putExtra(Intent.EXTRA_STREAM, uri)
+                clipData = ClipData.newRawUri(REPORT_NAME, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            activity.startActivity(Intent.createChooser(intent, null))
+            activeShares.add(file)
+            val sharedFile = file
+            val sharedUri = uri
+            Handler(Looper.getMainLooper()).postDelayed(
+                { discardShare(sharedFile, sharedUri) },
+                SHARE_LIFETIME_MS
+            )
+            result.success(true)
+        } catch (_: Exception) {
+            if (file != null) discardShare(file, uri)
+            result.error("document_share", "The PDF could not be shared.", null)
+        } finally {
+            bytes.fill(0)
+        }
+    }
+
+    private val shareDirectory get() = File(activity.cacheDir, "shared-reports")
+
+    private fun uriFor(file: File): Uri = FileProvider.getUriForFile(
+        activity, "${activity.packageName}.reports", file, REPORT_NAME
+    )
+
+    private fun discardShare(file: File, uri: Uri?) {
+        try {
+            if (uri != null) activity.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        } finally {
+            file.delete()
+            activeShares.remove(file)
+        }
+    }
+
     fun saveBackup(bytes: ByteArray?, result: MethodChannel.Result) =
         save(bytes, result, "application/octet-stream", "health-journal.healthbak")
 
@@ -26,6 +93,7 @@ internal class JournalDocuments(private val activity: Activity) {
         bytes: ByteArray?, result: MethodChannel.Result, mimeType: String, name: String
     ) {
         if (bytes == null || bytes.isEmpty() || bytes.size > MAX_DOCUMENT_BYTES) {
+            bytes?.fill(0)
             result.error("document_size", "File size is out of bounds.", null)
             return
         }
@@ -120,6 +188,9 @@ internal class JournalDocuments(private val activity: Activity) {
     }
 
     private companion object {
+        val activeShares = mutableSetOf<File>()
+        const val REPORT_NAME = "health-journal-report.pdf"
+        const val SHARE_LIFETIME_MS = 10 * 60 * 1000L
         const val DOCUMENT_REQUEST = 4802
         const val MAX_DOCUMENT_BYTES = 32 * 1024 * 1024 + 68
     }
