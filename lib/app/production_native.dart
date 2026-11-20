@@ -37,6 +37,8 @@ class AndroidJournal extends StatefulWidget {
 class _AndroidJournalState extends State<AndroidJournal>
     with WidgetsBindingObserver {
   static const _documents = MethodChannel('health_journal/documents');
+  static const _biometrics = MethodChannel('health_journal/biometrics');
+  final _biometricStatus = ValueNotifier((available: false, enabled: false));
   static const _appReset = MethodChannel('health_journal/app_reset');
   static const _backup = JournalBackup();
   bool _backupBusy = false, _backupOpen = false;
@@ -78,6 +80,7 @@ class _AndroidJournalState extends State<AndroidJournal>
     await _prepare(() async {
       _pinEnabled = await _pin.isEnabled();
       _locked = _pinEnabled;
+      await _refreshBiometrics();
       if (!_locked) await _openDatabase();
     });
   }
@@ -89,7 +92,10 @@ class _AndroidJournalState extends State<AndroidJournal>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _queueReminders();
+    if (state == AppLifecycleState.resumed) {
+      _queueReminders();
+      unawaited(_refreshBiometrics());
+    }
     if (state == AppLifecycleState.hidden ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached) {
@@ -323,9 +329,48 @@ class _AndroidJournalState extends State<AndroidJournal>
     _idle = Timer(const Duration(minutes: 5), _lock);
   }
 
-  Future<bool> _unlock(String current, String _) async {
+  Future<void> _refreshBiometrics() async {
+    try {
+      final status = await _biometrics.invokeMapMethod<String, bool>('status');
+      if (mounted) {
+        _biometricStatus.value = (
+          available: status?['available'] == true,
+          enabled: status?['enabled'] == true,
+        );
+      }
+    } on Exception {
+      if (mounted) _biometricStatus.value = (available: false, enabled: false);
+    }
+  }
+
+  Future<bool> _unlock(String current, String _) =>
+      _verifyUnlock(() => _pin.verify(current));
+
+  Future<bool> _unlockBiometrics() => _verifyUnlock(() async {
+    final verified = await _biometrics.invokeMethod<bool>('authenticate');
+    await _refreshBiometrics();
+    return verified == true;
+  });
+
+  Future<bool> _configureBiometrics(String current) async {
+    if (_locked || !_pinEnabled) return false;
     final epoch = _lockEpoch;
     if (!await _pin.verify(current) || !mounted || epoch != _lockEpoch) {
+      return false;
+    }
+    final method = _biometricStatus.value.enabled ? 'disable' : 'enable';
+    final success = await _biometrics.invokeMethod<bool>(method) == true;
+    await _refreshBiometrics();
+    return success && mounted && epoch == _lockEpoch;
+  }
+
+  Future<bool> _verifyUnlock(Future<bool> Function() authenticate) async {
+    final epoch = _lockEpoch;
+    if (!_locked ||
+        !await authenticate() ||
+        !mounted ||
+        epoch != _lockEpoch ||
+        !_locked) {
       return false;
     }
     setState(() {
@@ -361,9 +406,25 @@ class _AndroidJournalState extends State<AndroidJournal>
   }
 
   Future<bool> _configurePin(String current, String next) async {
+    // A newly configured PIN must never reactivate a prior biometric choice.
+    if (!_pinEnabled &&
+        await _biometrics.invokeMethod<bool>('disable') != true) {
+      return false;
+    }
     if (!await _pin.configure(current: current, next: next)) return false;
+    if (next.isEmpty) {
+      try {
+        await _biometrics.invokeMethod<bool>('disable');
+      } on PlatformException {
+        // A removed PIN disables the app lock even if cleanup needs a retry.
+      }
+      await _refreshBiometrics();
+    }
     if (!mounted) return true;
-    setState(() => _pinEnabled = next.isNotEmpty);
+    setState(() {
+      _pinEnabled = next.isNotEmpty;
+      if (!_pinEnabled) _locked = false;
+    });
     _idle?.cancel();
     if (WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
       _lock();
@@ -416,6 +477,7 @@ class _AndroidJournalState extends State<AndroidJournal>
     journalRemindersChannel.setMethodCallHandler(null);
     _backupBytes = null;
     _backupView.dispose();
+    _biometricStatus.dispose();
     WidgetsBinding.instance.removeObserver(this);
     HardwareKeyboard.instance.removeHandler(_onKey);
     final database = _database;
@@ -432,13 +494,17 @@ class _AndroidJournalState extends State<AndroidJournal>
         theme: journalTheme(Brightness.light),
         darkTheme: journalTheme(Brightness.dark),
         key: const ValueKey('locked'),
-        home: JournalPinForm(
-          enabled: true,
-          unlock: true,
-          onSubmit: _unlock,
-          onErase: () async =>
-              _locked &&
-              await _appReset.invokeMethod<bool>('eraseAppData') == true,
+        home: ValueListenableBuilder(
+          valueListenable: _biometricStatus,
+          builder: (_, status, _) => JournalPinForm(
+            enabled: true,
+            unlock: true,
+            onSubmit: _unlock,
+            onBiometricUnlock: status.enabled ? _unlockBiometrics : null,
+            onErase: () async =>
+                _locked &&
+                await _appReset.invokeMethod<bool>('eraseAppData') == true,
+          ),
         ),
       );
     }
@@ -462,10 +528,18 @@ class _AndroidJournalState extends State<AndroidJournal>
           backupSettings: _backupPage,
           reminderSettings: (_) =>
               ReminderSettings(onPermissionChanged: _queueReminders),
-          privacySettings: (_) => JournalPinForm(
-            enabled: _pinEnabled,
-            onSubmit: _configurePin,
-            onEraseWithPin: _eraseFromSettings,
+          privacySettings: (_) => ValueListenableBuilder(
+            valueListenable: _biometricStatus,
+            builder: (_, status, _) => JournalPinForm(
+              enabled: _pinEnabled,
+              onSubmit: _configurePin,
+              onEraseWithPin: _eraseFromSettings,
+              onConfigureBiometrics:
+                  _pinEnabled && (status.available || status.enabled)
+                  ? _configureBiometrics
+                  : null,
+              biometricsEnabled: status.enabled,
+            ),
           ),
         ),
       );
