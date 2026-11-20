@@ -1,4 +1,23 @@
-const { test, expect } = require('@playwright/test');
+const { test: base, expect, webkit } = require('@playwright/test');
+
+const test = base.extend({
+  context: async ({ context, browserName, baseURL }, use, testInfo) => {
+    if (browserName !== 'webkit') {
+      await use(context);
+      return;
+    }
+    // WebKit rejects OPFS access in an ephemeral context. A fresh on-disk
+    // profile lets this test inspect the same storage available in normal use.
+    const profile = await webkit.launchPersistentContext(
+      testInfo.outputPath('webkit-profile'), { baseURL, headless: true },
+    );
+    try {
+      await use(profile);
+    } finally {
+      await profile.close();
+    }
+  },
+});
 async function boot(page) {
   await page.goto('/');
   await page.locator('flt-semantics-placeholder').evaluate(e => e.click());
@@ -30,6 +49,7 @@ test('reload, independent tabs and browser storage', async ({ page, context }) =
   await expect(page.getByText('Fictional browser edit', { exact: true })).toBeVisible();
   const storage = await page.evaluate(async () => ({
     local: { ...localStorage }, session: { ...sessionStorage },
+    caches: await caches.keys(),
     databases: await indexedDB.databases(),
     opfs: await (async () => {
       const root = await navigator.storage.getDirectory();
@@ -38,7 +58,9 @@ test('reload, independent tabs and browser storage', async ({ page, context }) =
       return names;
     })(),
   }));
-  expect(JSON.stringify(storage)).not.toContain('Fictional browser edit');
+  expect(storage.local).toEqual({});
+  expect(storage.session).toEqual({});
+  expect(storage.caches).toEqual([]);
   expect(storage.databases).toEqual([]);
   expect(storage.opfs).toEqual([]);
   const second = await context.newPage();
@@ -74,4 +96,12 @@ test('manual measurement remains and resets on reload', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 1250 });
   await expect(page.getByText(/Weight · 72 kg/)).toBeVisible();
   await expect(page.getByText(/Weight · 72\.25 kg/)).toHaveCount(0);
+});
+
+test('demo settings identify private device features as unavailable', async ({ page }) => {
+  await boot(page);
+  await page.getByRole('button', { name: 'Settings' }).click();
+  await expect(page.getByText('PIN and biometrics are unavailable in this build.')).toBeVisible();
+  await expect(page.getByText('Encrypted backups and restore are unavailable.')).toBeVisible();
+  await expect(page.getByText('This build does not send notifications.')).toBeVisible();
 });

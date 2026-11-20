@@ -850,3 +850,20 @@ the oversized file cap, every truncated prefix, malformed headers, and a
 process interruption during replacement. Existing archive parameters
 and format are unchanged. iOS and older or low-memory Android hardware
 benchmarks remain open.
+
+## Fictional web browser matrix — 2026-11-20
+
+The Flutter 3.47.9 release web build from `12dd587` ran locally over HTTP on
+macOS 27.2.1. Playwright 1.65.1 ran three tests in each channel: Chrome
+157.0.8103.79, Edge 157.0.4341.46, Playwright Firefox 159.0 (revision 1572),
+and Playwright WebKit 27.2 (revision 2388). All 12 passed. The test changes
+were exercised from the same test tree. Release `main.dart.js` SHA-256:
+`21056f64a1e7d8546d9085aed7663ce29996f1510804b9ff3c902cbb51d52a20`.
+
+Each channel verified medication and measurement reload reset, independent
+tabs, empty local/session storage, no IndexedDB databases or OPFS files,
+empty Cache Storage, and unavailable native PIN/biometrics, backup and
+notifications. WebKit used a fresh persistent Playwright profile because its
+ephemeral context rejected OPFS inspection. Flutter analysis and 29 focused
+host tests passed. Installed Safari, physical mobile browsers, PWA
+installation, and deployed HTTPS hosting remain outside this run.
