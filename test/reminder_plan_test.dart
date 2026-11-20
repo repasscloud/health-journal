@@ -89,14 +89,24 @@ void main() {
           ScheduleRule(hour: hour, minute: 1, weekdays: {1, 2, 3, 4, 5, 6, 7}),
       ],
     );
+    final simultaneous = Regimen(
+      id: 'simultaneous',
+      medicationId: medication.id,
+      amount: 1,
+      unit: 'tablet',
+      kind: ScheduleKind.fixed,
+      effectiveFrom: now.toUtc(),
+      rules: regimen.rules,
+    );
     final plan = planMedicationReminders(
       now: now,
       medications: [medication],
-      regimens: [regimen],
-      enabledRegimenIds: {regimen.id},
+      regimens: [regimen, simultaneous],
+      enabledRegimenIds: {regimen.id, simultaneous.id},
       administrations: [],
     );
     expect(plan, hasLength(64));
+    expect(plan.map((slot) => slot.at).toSet(), hasLength(64));
     expect(plan.first.at.isAfter(now), isTrue);
     expect(plan.last.at.isAfter(now.add(const Duration(days: 7))), isFalse);
     expect(

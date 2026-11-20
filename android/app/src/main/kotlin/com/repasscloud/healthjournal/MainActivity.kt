@@ -49,6 +49,13 @@ class MainActivity : FlutterActivity() {
         super.onCreate(savedInstanceState)
     }
 
+    override fun cleanUpFlutterEngine(flutterEngine: FlutterEngine) {
+        if (BuildConfig.FLAVOR == "production") {
+            JournalReminderReceiver.onClockChanged = null
+        }
+        super.cleanUpFlutterEngine(flutterEngine)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "health_journal/device_time_zone").setMethodCallHandler { call, result ->
@@ -87,8 +94,12 @@ class MainActivity : FlutterActivity() {
             }
         }
 
-        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
-            "health_journal/reminders").setMethodCallHandler { call, result ->
+        val reminders = MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "health_journal/reminders")
+        JournalReminderReceiver.onClockChanged = {
+            reminders.invokeMethod("clockChanged", null)
+        }
+        reminders.setMethodCallHandler { call, result ->
             try {
                 when (call.method) {
                     "enabled" -> result.success(JournalReminderReceiver.enabled(this))

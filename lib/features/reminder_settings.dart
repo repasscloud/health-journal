@@ -12,7 +12,8 @@ class ReminderSettings extends StatefulWidget {
   State<ReminderSettings> createState() => _ReminderSettingsState();
 }
 
-class _ReminderSettingsState extends State<ReminderSettings> {
+class _ReminderSettingsState extends State<ReminderSettings>
+    with WidgetsBindingObserver {
   bool _enabled = false;
   bool _busy = false;
   String? _message;
@@ -20,7 +21,19 @@ class _ReminderSettingsState extends State<ReminderSettings> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _run('enabled');
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_busy) _run('enabled');
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
   }
 
   Future<void> _run(String method) async {
@@ -61,7 +74,7 @@ class _ReminderSettingsState extends State<ReminderSettings> {
           ),
           const SizedBox(height: 12),
           const Text(
-            'Turn on local reminders for each scheduled regimen. Reminders are best effort and may be delayed. Open the journal after a restart or a clock change to refresh them.',
+            'Turn on local reminders for each scheduled regimen. Reminders are best effort and may be delayed. Open the journal periodically and after changing the clock or time zone to refresh them.',
           ),
           const SizedBox(height: 12),
           const Text(

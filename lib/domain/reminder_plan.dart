@@ -51,5 +51,12 @@ List<ScheduleOccurrence> planMedicationReminders({
       final byInstant = a.at.compareTo(b.at);
       return byInstant == 0 ? a.key.compareTo(b.key) : byInstant;
     });
-  return List.unmodifiable(sorted.take(maximumPending));
+  // Native uses one private notification for all occurrences at an instant.
+  // Coalesce before capping so ties do not crowd out later wake-ups.
+  final instants = <int>{};
+  return List.unmodifiable(
+    sorted
+        .where((slot) => instants.add(slot.at.millisecondsSinceEpoch))
+        .take(maximumPending),
+  );
 }

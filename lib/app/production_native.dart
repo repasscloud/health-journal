@@ -67,6 +67,10 @@ class _AndroidJournalState extends State<AndroidJournal>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     HardwareKeyboard.instance.addHandler(_onKey);
+    journalRemindersChannel.setMethodCallHandler((call) async {
+      if (call.method != 'clockChanged') throw MissingPluginException();
+      _queueReminders();
+    });
     unawaited(_checkPin());
   }
 
@@ -409,6 +413,7 @@ class _AndroidJournalState extends State<AndroidJournal>
   void dispose() {
     _idle?.cancel();
     _reminderRefresh?.cancel();
+    journalRemindersChannel.setMethodCallHandler(null);
     _backupBytes = null;
     _backupView.dispose();
     WidgetsBinding.instance.removeObserver(this);

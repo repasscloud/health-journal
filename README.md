@@ -89,8 +89,9 @@ so use a dedicated test installation, never a personal-record installation.
 Android production stores the journal and user preferences locally. It offers
 an optional journal PIN, per-regimen reminders, a local 30-day PDF report, and a
 full CSV export. Save either file to a location you choose or share the PDF
-through Android. Reminders use best-effort Android notifications. Open the journal
-after a reboot or clock change to refresh them. Exported PDFs and CSVs are readable by
+through Android. Reminders use best-effort Android notifications. After reboot, Android can replay the remaining plan in the same time zone.
+Open the journal periodically and after changing the clock or time zone to
+refresh it. Exported PDFs and CSVs are readable by
 anyone who can access the files. The journal provides no medical advice.
 
 Android supports password-encrypted backup export, preview and replacement.

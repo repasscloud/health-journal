@@ -887,3 +887,30 @@ the former PIN screen. Tested APK SHA-256
 was built from the code recorded as `122577c`.
 Static analysis and four focused PIN/confirmation tests passed.
 See [ADR 0012](docs/adr/0012-android-forgotten-pin-reset.md).
+
+## Android reminder recovery — 2026-11-20
+
+The production release built from `e822a2c` (APK SHA-256
+`2169186a46f73d7c3bdcb8cfb9265a666e80e4560081e724779fbcd97534a181`)
+ran under `com.repasscloud.healthjournal.devicetest` on the isolated
+API 35 arm64 emulator `HJ_P45_Fictional_20261120`, build 12960925.
+
+- A fictional daily regimen scheduled seven wake-ups. Changing the
+  foreground device zone from Adelaide to Auckland moved the first slot
+  from 1795210200000 to 1795201200000 UTC epoch milliseconds. Returning to
+  the Adelaide zone and rebooting restored the same seven timestamps
+  without opening the journal. The receiver discarded the Auckland plan
+  when the emulator restarted in Adelaide.
+- With the emulator clock set to the day before the April 2027 Adelaide
+  DST change, the wake-ups stayed at 08:00 local time. Consecutive UTC
+  instants across the transition were 25 hours apart.
+- OS notification revocation followed by app launch cleared all wake-ups
+  and the app-private plan. Granting again and resuming rebuilt the
+  schedule. Revising the regimen to switch reminders off cleared all seven
+  wake-ups and left **No doses recorded**.
+- The host analyzer and 12 planner, permission and record tests passed.
+  Older Android and physical OEM battery/idle delivery remain open. iOS
+  reminders remain outside this implementation.
+
+The plan is bounded, encrypted with an Android Keystore key and replayed
+after OS user unlock. See [ADR 0015](docs/adr/0015-android-reminder-reboot.md).
