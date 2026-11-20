@@ -9,11 +9,11 @@ separately. iOS platform results are deferred. Methods and outcomes are in
 
 | Test | Evidence | Remaining |
 |---|---|---|
-| DEMO-01 | Chrome release reload restored the fictional fixture after edits. | Other browsers. |
-| DEMO-02 | Chrome second tab used an independent fixture. | Other browsers. |
-| DEMO-03 | Chrome checked local/session storage, IndexedDB and OPFS. | Other browsers. |
+| DEMO-01 | Chrome, Edge, Playwright Firefox and WebKit release automation restored the fixture after medication and measurement edits. | Physical mobile browsers and installed Safari. |
+| DEMO-02 | All four browser automation channels opened an independent second tab. | Physical mobile browsers. |
+| DEMO-03 | All four browser automation channels found empty local/session storage, IndexedDB, OPFS and Cache Storage after the edit. | Physical mobile browsers. |
 | DEMO-04 | The current build has no offline app-shell service worker. | Optional offline demonstration. |
-| DEMO-05 | Widget checks and build composition leave production capabilities unavailable. | Cross-browser manual checks. |
+| DEMO-05 | All four browser automation channels displayed that PIN/biometrics, encrypted backup and notifications were unavailable. | Physical mobile browsers. |
 | CORE-01 | Android release created a catalogue and regimen. Host tests reopen catalogue revisions and historical snapshots. | Full hardware edit, correction and restart matrix. |
 | CORE-02 | Host tests preserve historical regimen and dose facts after revision and restart. Android saved a revised regimen. | Complete physical dosing/correction workflow. |
 | CORE-03 | Domain and widget tests cover PRN as unscheduled. Android reminder planner excludes PRN. | Physical PRN round trip. |

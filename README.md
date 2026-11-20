@@ -75,6 +75,10 @@ flutter build ios --release --no-codesign
 Browser acceptance: `npm ci --prefix tool/browser`, then
 `npx --prefix tool/browser playwright test --config tool/browser/playwright.config.cjs`.
 The test uses installed Chrome and serves the web release build locally.
+For the desktop automation matrix, install Microsoft Edge and run
+`npx --prefix tool/browser playwright install firefox webkit`. Set
+`HJ_BROWSER_MATRIX=1` when running the acceptance command to include
+Edge, Playwright Firefox and Playwright WebKit.
 
 Native encryption probe (fictional data only):
 `flutter run --release -d DEVICE_ID -t tool/native_encryption_probe.dart --no-resident`.
