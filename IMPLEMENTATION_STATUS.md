@@ -767,3 +767,20 @@ never automatically promotes one over the journal. If startup fails, retain
 the journal, sidecars, recovery copy and installation key together. Resolve
 the storage problem and retry. A staging path obstruction exercises a real
 write failure, but does not reproduce mid-write disk exhaustion or power loss.
+
+## Android reports and exports — 2026-11-20
+
+Android generates a local 30-day PDF with UTC dates, medication plans and
+explicit outcomes, correction and symptom revision provenance, versioned
+front/back pain maps, and a paginated timeline. Android saves via the
+document picker or shares through a read-only grant for a private cache
+file. See [ADR 0013](docs/adr/0013-local-pdf-and-android-sharing.md).
+
+Analysis and three focused PDF/CSV tests passed. Poppler verified an
+eight-page fictional report and raster marker positions and area size on
+v1 front and v2 back artwork. On the isolated API 35 arm64 emulator release,
+Android Downloads saved both formats. Poppler and a standard CSV parser
+read the saved files, and the Android Print share target displayed the PDF
+preview. After force-stop, a cold launch removed the interrupted share copy.
+Coverage includes accented Latin text. Additional locales, document
+providers, and iOS save/share acceptance remain open.

@@ -11,6 +11,7 @@ import '../features/backup/backup_page.dart';
 import '../features/reminder_settings.dart';
 import '../features/reports/journal_csv.dart';
 import '../features/reports/journal_export.dart';
+import '../features/reports/journal_pdf.dart';
 import '../features/security_pin_form.dart';
 import '../platform/backup/journal_backup.dart';
 import '../platform/security/journal_pin.dart';
@@ -238,20 +239,29 @@ class _AndroidJournalState extends State<AndroidJournal>
     }
   }
 
-  Future<void> _exportCsv() async {
+  Future<void> _exportDocument(String method) async {
     final repository = _repository;
     if (_exporting || _locked || repository == null) return;
     setState(() => _exporting = true);
-    final bytes = journalCsv(repository);
+    final csv = method == 'saveCsv';
+    final format = csv ? 'CSV' : 'PDF';
+    final share = method == 'sharePdf';
+    Uint8List? bytes;
     try {
-      final saved = await _documents.invokeMethod<bool>('saveCsv', bytes);
-      _exportResult = saved == true
-          ? 'CSV saved to the chosen location.'
+      bytes = csv
+          ? journalCsv(repository)
+          : await journalPdf(repository, generatedAt: DateTime.now());
+      if (!mounted || _locked || repository != _repository) return;
+      final accepted = await _documents.invokeMethod<bool>(method, bytes);
+      _exportResult = accepted == true && !share
+          ? '$format saved to the chosen location.'
           : null;
     } catch (_) {
-      _exportResult = 'Could not save the CSV to the chosen location.';
+      _exportResult = share
+          ? 'Could not open Android sharing for the PDF.'
+          : 'Could not save the $format to the chosen location.';
     } finally {
-      bytes.fillRange(0, bytes.length, 0);
+      bytes?.fillRange(0, bytes.length, 0);
       if (mounted) setState(() => _exporting = false);
       _showExportResult();
     }
@@ -426,7 +436,11 @@ class _AndroidJournalState extends State<AndroidJournal>
           onJournalChanged: _queueReminders,
           messengerKey: _messenger,
           navigatorKey: _journalNavigator,
-          exportSettings: (_) => JournalExport(onExport: _exportCsv),
+          exportSettings: (_) => JournalExport(
+            onCsv: () => _exportDocument('saveCsv'),
+            onPdf: () => _exportDocument('savePdf'),
+            onShare: () => _exportDocument('sharePdf'),
+          ),
           backupSettings: _backupPage,
           reminderSettings: (_) =>
               ReminderSettings(onPermissionChanged: _queueReminders),

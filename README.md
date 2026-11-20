@@ -83,14 +83,14 @@ a build alone is insufficient. This target replaces the development app with a p
 so use a dedicated test installation, never a personal-record installation.
 
 Android production stores the journal and user preferences locally. It offers
-an optional journal PIN, per-regimen reminders and a CSV export to a location
-you choose. Reminders use best-effort Android notifications. Open the journal
-after a reboot or clock change to refresh them. CSV files are readable by
-anyone who can access the export. The journal provides no medical advice.
+an optional journal PIN, per-regimen reminders, a local 30-day PDF report, and a
+full CSV export. Save either file to a location you choose or share the PDF
+through Android. Reminders use best-effort Android notifications. Open the journal
+after a reboot or clock change to refresh them. Exported PDFs and CSVs are readable by
+anyone who can access the files. The journal provides no medical advice.
 
 Android supports password-encrypted backup export, preview and replacement.
-Portable recovery requires the backup file and its password. PDF reports are
-still in development. Publisher IDs, privacy policy and support details must be
+Portable recovery requires the backup file and its password. Publisher IDs, privacy policy and support details must be
 set before release. No signing team or credentials are committed.
 
 Additional fictional native store probe:
