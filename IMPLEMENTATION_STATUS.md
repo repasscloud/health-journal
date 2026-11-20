@@ -914,3 +914,27 @@ API 35 arm64 emulator `HJ_P45_Fictional_20261120`, build 12960925.
 
 The plan is bounded, encrypted with an Android Keystore key and replayed
 after OS user unlock. See [ADR 0015](docs/adr/0015-android-reminder-reboot.md).
+
+## Android biometric unlock — 2026-11-20
+
+Production now supports optional strong biometrics on Android 11+ with a
+journal PIN configured. The opt-in uses the current PIN and an Android
+per-use biometric operation. The journal PIN remains available if the
+prompt is unavailable, denied or cancelled. See [ADR 0016](docs/adr/0016-android-biometric-unlock.md).
+
+On the isolated API 35 arm64 emulator `HJ_P45_Biometrics_20261120`,
+build 12960925, a virtual fingerprint enrolled and enabled journal unlock.
+Home/resume and force-stop/relaunch gated the journal. Cancelling the
+system prompt left the PIN gate intact, and the journal PIN opened it.
+A fresh launch also unlocked with the enrolled virtual fingerprint.
+The recents-only API exposed a live journal preview on this emulator.
+The production secure window rendered a blank
+[Overview card](docs/test_results/android-api35-secure-overview.png)
+on the repeated test and now prevents production screenshots and recording.
+The final isolated test APK from `adfa06a` had SHA-256
+`f6760ce93a9a5227ef2d352f424f06382c290932e47efcdde6d7f48e3c1937ae`.
+
+Static analysis and five focused host tests passed, including persisted PIN
+throttling and fallback at 200% text in landscape with keyboard insets.
+Hardware enrollment change, biometric lockout, older Android and iOS
+acceptance remain open.
