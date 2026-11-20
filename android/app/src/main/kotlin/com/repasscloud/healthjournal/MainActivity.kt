@@ -46,11 +46,7 @@ class MainActivity : FlutterActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         if (BuildConfig.FLAVOR == "production") {
             documents.removeInterruptedShares()
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                setRecentsScreenshotEnabled(false)
-            } else {
-                window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
-            }
+            window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         }
         super.onCreate(savedInstanceState)
     }
