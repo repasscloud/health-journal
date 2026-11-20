@@ -1,3 +1,4 @@
+import 'medication.dart';
 import 'regimen.dart';
 
 final class ScheduleOccurrence {
@@ -45,4 +46,16 @@ List<ScheduleOccurrence> occurrencesForDate(
     );
   }
   return occurrences..sort((a, b) => a.at.compareTo(b.at));
+}
+
+/// Only the end of each explicit correction chain describes the current
+/// outcome. Repository reads do not have to return rows in insertion order.
+Map<String, AdministrationStatus> occurrenceOutcomes(
+  Iterable<Administration> events,
+) {
+  final superseded = events.map((event) => event.correctsId).toSet();
+  return {
+    for (final event in events)
+      if (!superseded.contains(event.id)) ?event.occurrenceKey: event.status,
+  };
 }
