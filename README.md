@@ -116,7 +116,8 @@ device acceptance. Native personal-record entry stays gated regardless of simula
 `tool/native_migration_probe.dart` is a separate release entry point for a
 disposable emulator where `com.repasscloud.healthjournal` is absent. Its
 `FICTIONAL_V1_SQL_BASE64` Dart define is the Base64-encoded UTF-8 JSON list of
-SQLite statements from `test/fixtures/schema_v1.json` under `fixed_sql`. Build
+SQLite statement strings extracted from each `fixed_sql` entity's
+`sql[].sql` field in `test/fixtures/schema_v1.json`. Build
 it with the production flavor so the native protected directory and secure key
 adapter are available. Keep its artifact separate from the normal production
 APK and explicitly select the verified emulator serial for installation.

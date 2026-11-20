@@ -36,6 +36,19 @@ jobs:
           channel: stable
           cache: true
       - run: flutter pub get --enforce-lockfile
+      - name: Make Maven Central available to included Gradle builds
+        shell: bash
+        run: |
+          gradle_user_dir="${GRADLE_USER_HOME:-$HOME/.gradle}"
+          mkdir -p "$gradle_user_dir/init.d"
+          cat > "$gradle_user_dir/init.d/flutter-plugin-repositories.gradle" <<'EOF'
+          beforeSettings { settings ->
+            settings.pluginManagement.repositories {
+              mavenCentral()
+              gradlePluginPortal()
+            }
+          }
+          EOF
       - run: flutter build apk --release --flavor production
       - run: flutter build apk --release --flavor review -t lib/main_review.dart
       - name: Verify release flavor identities and production manifest
@@ -50,10 +63,14 @@ jobs:
           done
           grep -q 'ReviewEntry' "$RUNNER_TEMP/review.xml"
           grep -q 'android:allowBackup="false"' "$RUNNER_TEMP/production.xml"
-          grep -q 'android.permission.POST_NOTIFICATIONS' "$RUNNER_TEMP/production.xml"
-          if grep -q 'android.permission.POST_NOTIFICATIONS' "$RUNNER_TEMP/review.xml"; then
-            exit 1
-          fi
+          grep -q 'android:fullBackupContent="false"' "$RUNNER_TEMP/production.xml"
+          grep -q 'android:dataExtractionRules=' "$RUNNER_TEMP/production.xml"
+          for capability in POST_NOTIFICATIONS RECEIVE_BOOT_COMPLETED USE_BIOMETRIC; do
+            grep -q "android.permission.$capability" "$RUNNER_TEMP/production.xml"
+            if grep -q "android.permission.$capability" "$RUNNER_TEMP/review.xml"; then
+              exit 1
+            fi
+          done
           if grep -Eq 'ReviewEntry|android.permission.INTERNET' "$RUNNER_TEMP/production.xml"; then
             exit 1
           fi
