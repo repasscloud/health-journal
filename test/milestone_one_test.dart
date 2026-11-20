@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:health_journal/app/environment.dart';
 import 'package:health_journal/app/journal_app.dart';
 import 'package:health_journal/data/demo/demo_repository.dart';
@@ -48,21 +49,37 @@ void main() {
     DateTime? updatedAt,
     String markerId = 'p',
     String id = 's',
+    double x = .5,
+    double y = .3,
   }) => SymptomEntry(
     id: id,
     title: title,
     onsetAt: at,
     recordedAt: at,
     updatedAt: updatedAt,
+    endAt: at.add(const Duration(hours: 4)),
+    category: 'Fictional category',
     triggers: 'Fictional activity',
+    relief: 'Fictional rest',
+    effect: 'Fictional effect',
+    pattern: 'intermittent',
     pain: [
       PainObservation(
         id: markerId,
         view: 'back',
-        x: .5,
-        y: .3,
+        x: x,
+        y: y,
         severity: 4,
         radius: radius,
+      ),
+      PainObservation(
+        id: '$markerId-secondary',
+        view: 'front',
+        assetVersion: 'v2',
+        x: .57,
+        y: .32,
+        severity: 8,
+        painType: 'sharp',
       ),
     ],
   );
@@ -97,8 +114,8 @@ void main() {
     demo.reviseSymptom(
       symptom('Fictional second', radius: .07, updatedAt: later),
     );
-    expect(demo.symptoms.single.pain.single.radius, .07);
-    expect(demo.symptomHistory('s').single.pain.single.radius, isNull);
+    expect(demo.symptoms.single.pain.first.radius, .07);
+    expect(demo.symptomHistory('s').single.pain.first.radius, isNull);
     expect(() => demo.reviseSymptom(symptom('Stale')), throwsStateError);
     expect(demo.symptomHistory('s'), hasLength(1));
   });
@@ -133,6 +150,18 @@ void main() {
       originalOffsetMinutes: 630,
     );
     await repository.recordAdministration(event);
+    final duplicate = regimen.record(
+      eventId: 'duplicate',
+      medication: original,
+      status: AdministrationStatus.unknown,
+      recordedAt: event.recordedAt,
+      occurrenceKey: event.occurrenceKey,
+      intendedAt: event.intendedAt,
+    );
+    await expectLater(
+      repository.recordAdministration(duplicate),
+      throwsStateError,
+    );
     await repository.saveMedication(
       medication('Fictional revised catalogue', updatedAt: later),
     );
@@ -145,9 +174,36 @@ void main() {
       effectiveFrom: later,
     );
     await repository.reviseRegimen('r', next);
+    final correction = Administration(
+      id: 'correction',
+      medicationId: original.id,
+      medicationNameSnapshot: original.name,
+      medicationSnapshot: event.medicationSnapshot,
+      regimenId: event.regimenId,
+      regimenSnapshot: event.regimenSnapshot,
+      status: AdministrationStatus.taken,
+      recordedAt: later.add(const Duration(hours: 3)),
+      occurredAt: event.occurredAt,
+      takenAt: event.occurredAt,
+      amount: 1,
+      unit: 'tablet',
+      correctsId: event.id,
+      correctionReason: 'Fictional record correction',
+      occurrenceKey: event.occurrenceKey,
+      intendedAt: event.intendedAt,
+      originalZoneLabel: event.originalZoneLabel,
+      originalOffsetMinutes: event.originalOffsetMinutes,
+    );
+    await repository.recordAdministration(correction);
     await repository.addSymptom(symptom('Fictional symptom before edit'));
     await repository.reviseSymptom(
-      symptom('Fictional symptom after edit', radius: .06, updatedAt: later),
+      symptom(
+        'Fictional symptom after edit',
+        x: .55,
+        y: .35,
+        radius: .06,
+        updatedAt: later,
+      ),
     );
     await repository.addSymptom(
       symptom('Unrelated', markerId: 'unrelated', id: 'other'),
@@ -199,9 +255,26 @@ void main() {
     expect(repository.preferences.appearance, JournalAppearance.dark);
     expect(repository.timeline(search: 'fictional symptom').single.id, 's');
     expect(
-      repository.administrations.single.occurrenceKey,
-      event.occurrenceKey,
+      repository.administrations.map((entry) => entry.occurrenceKey),
+      everyElement(event.occurrenceKey),
     );
+    expect(repository.administrations, hasLength(2));
+    final reopenedCorrection = repository.administrations.singleWhere(
+      (entry) => entry.id == 'correction',
+    );
+    expect(reopenedCorrection.correctsId, event.id);
+    expect(reopenedCorrection.status, AdministrationStatus.taken);
+    expect(reopenedCorrection.takenAt, event.occurredAt);
+    expect(reopenedCorrection.intendedAt, event.intendedAt);
+    expect(reopenedCorrection.originalZoneLabel, 'ACDT');
+    expect(reopenedCorrection.originalOffsetMinutes, 630);
+    expect(reopenedCorrection.regimenSnapshot?.kind, ScheduleKind.fixed);
+    expect(reopenedCorrection.regimenSnapshot?.effectiveTo, isNull);
+    expect(occurrenceOutcomes([reopenedCorrection, event]), {
+      event.occurrenceKey!: AdministrationStatus.taken,
+    });
+    expect(next.rules, isEmpty);
+    expect(occurrencesForDate(next, DateTime(2026, 1, 6)), isEmpty);
     expect(
       repository.symptomHistory('s').single.title,
       'Fictional symptom before edit',
@@ -223,12 +296,31 @@ void main() {
     expect(persisted.regimen?.effectiveTo, isNull);
     final saved = (await records.symptom('s'))!;
     expect(saved.title, 'Fictional symptom after edit');
-    expect(saved.pain.single.assetVersion, 'v1');
-    expect(saved.pain.single.radius, .06);
+    expect(saved.pain.first.assetVersion, 'v1');
+    expect(saved.endAt, at.add(const Duration(hours: 4)));
+    expect(saved.category, 'Fictional category');
+    expect(saved.pattern, 'intermittent');
+    expect(saved.triggers, 'Fictional activity');
+    expect(saved.relief, 'Fictional rest');
+    expect(saved.effect, 'Fictional effect');
+    final markers = {for (final point in saved.pain) point.id: point};
+    final moved = markers['p']!;
+    expect((moved.x, moved.y, moved.radius), (.55, .35, .06));
+    expect((moved.view, moved.assetVersion, moved.severity), ('back', 'v1', 4));
+    final untouched = markers['p-secondary']!;
     expect(
-      (await records.symptomHistory('s')).single.pain.single.radius,
-      isNull,
+      (
+        untouched.view,
+        untouched.assetVersion,
+        untouched.severity,
+        untouched.painType,
+      ),
+      ('front', 'v2', 8, 'sharp'),
     );
+    expect((untouched.x, untouched.y, untouched.radius), (.57, .32, null));
+    final before = (await records.symptomHistory('s')).single.pain
+        .singleWhere((p) => p.id == 'p');
+    expect((before.x, before.y, before.radius), (.5, .3, null));
     expect((await records.measurement('bp'))?.secondary, 80);
   });
 
@@ -304,10 +396,10 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(save);
       await tester.pumpAndSettle();
-      expect(demo.symptoms.single.pain.single.region, 'head');
-      expect(demo.symptoms.single.pain.single.assetVersion, 'v1');
-      expect(demo.symptoms.single.pain.single.id, 'p');
-      expect(demo.symptomHistory('s').single.pain.single.region, 'torso');
+      expect(demo.symptoms.single.pain.first.region, 'head');
+      expect(demo.symptoms.single.pain.first.assetVersion, 'v1');
+      expect(demo.symptoms.single.pain.first.id, 'p');
+      expect(demo.symptomHistory('s').single.pain.first.region, 'torso');
       expect(find.text('Edit history'), findsOneWidget);
     },
   );
@@ -316,7 +408,7 @@ void main() {
     tester,
   ) async {
     final environment = AppEnvironment.demo(richFixture: false);
-    for (var index = 0; index < 24; index++) {
+    for (var index = 0; index < 160; index++) {
       final date = at.add(Duration(days: index, hours: 12));
       environment.repository!.addSymptom(
         SymptomEntry(
@@ -348,10 +440,11 @@ void main() {
     await tester.tap(more);
     await tester.pumpAndSettle();
     await tester.scrollUntilVisible(
-      find.text('Fictional entry 0'),
+      find.text('Fictional entry 120'),
       280,
       scrollable: scroll,
     );
+    expect(find.text('Fictional entry 119'), findsNothing);
     await tester.scrollUntilVisible(
       find.text('Filter by date'),
       -500,
@@ -371,10 +464,141 @@ void main() {
     await tester.ensureVisible(symptoms);
     await tester.tap(symptoms);
     await tester.pumpAndSettle();
-    expect(find.textContaining('1 symptom entries'), findsOneWidget);
+    expect(find.textContaining('1 symptom entry'), findsOneWidget);
     expect(find.text('Weekly symptom entries'), findsOneWidget);
     expect(find.text('Fictional entry 1'), findsNothing);
     expect(more, findsNothing);
+  });
+
+  testWidgets(
+    'historical marker alignment survives orientation and editor zoom',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 780);
+      addTearDown(tester.view.reset);
+      final original = symptom('Fictional alignment', x: .55, y: .34);
+      final semantics = tester.ensureSemantics();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SymptomDetail(entry: original, onRevise: (_) {}),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final map = find.byKey(const ValueKey('saved-map-v1-back'));
+      final marker = find.byKey(const ValueKey('saved-marker-p'));
+      final description = find.bySemanticsLabel(
+        'Marker 1, Back view, Torso, Aching, severity 4 out of 10',
+      );
+      void checkAlignment(Finder artwork, Finder point) {
+        final bounds = tester.getRect(artwork);
+        final center = tester.getCenter(point);
+        expect((center.dx - bounds.left) / bounds.width, closeTo(.55, .001));
+        expect((center.dy - bounds.top) / bounds.height, closeTo(.34, .001));
+      }
+
+      final detailScroll = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(marker, 250, scrollable: detailScroll);
+      await tester.pumpAndSettle();
+      checkAlignment(map, marker);
+      await tester.scrollUntilVisible(
+        description,
+        180,
+        scrollable: detailScroll,
+      );
+      tester.view.physicalSize = const Size(780, 360);
+      final scroll = find.byType(Scrollable).first;
+      await tester.scrollUntilVisible(map, 210, scrollable: scroll);
+      await tester.pumpAndSettle();
+      checkAlignment(map, marker);
+      tester.view.physicalSize = const Size(360, 780);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('Edit symptom'),
+        -260,
+        scrollable: detailScroll,
+      );
+      await tester.tap(find.text('Edit symptom'));
+      await tester.pumpAndSettle();
+      final editorScroll = find
+          .descendant(
+            of: find.byType(SymptomForm),
+            matching: find.byType(Scrollable),
+          )
+          .first;
+      final historicalPoint = find.text('Back · Torso · 4/10 · Aching');
+      await tester.scrollUntilVisible(
+        historicalPoint,
+        320,
+        scrollable: editorScroll,
+      );
+      await tester.tap(historicalPoint);
+      await tester.pumpAndSettle();
+      final work = find.descendant(
+        of: find.byType(InteractiveViewer),
+        matching: find.byType(SvgPicture),
+      );
+      final dot = find.descendant(
+        of: find.byType(InteractiveViewer),
+        matching: find.byType(CircleAvatar),
+      );
+      await tester.scrollUntilVisible(work, -260, scrollable: editorScroll);
+      await tester.ensureVisible(work);
+      await tester.pumpAndSettle();
+      checkAlignment(work, dot);
+      final center = tester.getCenter(work);
+      final first = await tester.startGesture(center - const Offset(32, 0));
+      final second = await tester.startGesture(center + const Offset(32, 0));
+      await first.moveBy(const Offset(-25, 0));
+      await second.moveBy(const Offset(25, 0));
+      await tester.pump();
+      await first.moveBy(const Offset(-13, 0));
+      await second.moveBy(const Offset(13, 0));
+      await first.up();
+      await second.up();
+      await tester.pumpAndSettle();
+      expect(tester.getRect(work).width, greaterThan(220));
+      checkAlignment(work, dot);
+      semantics.dispose();
+    },
+  );
+
+  testWidgets('Timeline search isolates record types with a shared ID', (
+    tester,
+  ) async {
+    final environment = AppEnvironment.demo(richFixture: false);
+    final repo = environment.repository!;
+    repo.addSymptom(
+      SymptomEntry(
+        id: 'shared',
+        title: 'Fictional isolated search',
+        onsetAt: at,
+        recordedAt: at,
+      ),
+    );
+    repo.addMeasurement(
+      Measurement(
+        id: 'shared',
+        kind: MeasurementKind.weight,
+        value: 72,
+        unit: 'kg',
+        measuredAt: at,
+        recordedAt: at,
+      ),
+    );
+    await tester.pumpWidget(JournalApp(environment: environment));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Timeline'));
+    await tester.pumpAndSettle();
+    final search = find.widgetWithText(TextFormField, 'Search timeline');
+    await tester.enterText(search, 'weight');
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Weight'), findsWidgets);
+    expect(find.text('Fictional isolated search'), findsNothing);
+    await tester.enterText(search, 'isolated search');
+    await tester.pumpAndSettle();
+    expect(find.text('Fictional isolated search'), findsOneWidget);
+    expect(find.textContaining('72 kg'), findsNothing);
   });
 
   testWidgets(

@@ -443,10 +443,7 @@ class _JournalHomeState extends State<JournalHome> {
           for (final occurrence in occurrencesForDate(regimen, now))
             (medication, occurrence),
     ]..sort((a, b) => a.$2.at.compareTo(b.$2.at));
-    final linked = {
-      for (final event in repository.administrations)
-        ?event.occurrenceKey: event.status,
-    };
+    final linked = occurrenceOutcomes(repository.administrations);
     final activity = Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -650,9 +647,9 @@ class _JournalHomeState extends State<JournalHome> {
       'schedule': 'Regimens',
     };
     final query = search.trim().toLowerCase();
-    final matchingIds = repository
+    final matchingEntries = repository
         .timeline(search: search)
-        .map((item) => item.id)
+        .map((item) => (item.type, item.id))
         .toSet();
     final matchingReadings = repository.measurements
         .where(
@@ -668,8 +665,9 @@ class _JournalHomeState extends State<JournalHome> {
         .timeline()
         .where(
           (item) =>
-              (matchingIds.contains(item.id) ||
-                  matchingReadings.contains(item.id)) &&
+              (matchingEntries.contains((item.type, item.id)) ||
+                  (item.type == 'measurement' &&
+                      matchingReadings.contains(item.id))) &&
               (historyFilter == null || item.type == historyFilter) &&
               (range == null ||
                   (!item.at.isBefore(range.start) && item.at.isBefore(end!))),
@@ -685,6 +683,7 @@ class _JournalHomeState extends State<JournalHome> {
           (entry) => [?entry.severity, ...entry.pain.map((p) => p.severity)],
         )
         .toList();
+    final symptomCount = symptomIds.length;
     final countsByWeek = <DateTime, int>{};
     for (final item in items.where((item) => item.type == 'symptom')) {
       final day = item.at.toLocal();
@@ -765,7 +764,7 @@ class _JournalHomeState extends State<JournalHome> {
       ),
       if (historyFilter == 'symptom' && symptomIds.isNotEmpty)
         Text(
-          '${symptomIds.length} symptom entries'
+          '$symptomCount symptom ${symptomCount == 1 ? 'entry' : 'entries'}'
           '${severities.isEmpty ? '' : ' · Recorded severity ${severities.reduce((a, b) => a < b ? a : b)}–${severities.reduce((a, b) => a > b ? a : b)}/10'}',
         ),
       if (historyFilter == 'symptom' && countsByWeek.isNotEmpty)
@@ -987,11 +986,12 @@ class _JournalHomeState extends State<JournalHome> {
           padding: const EdgeInsets.only(bottom: 8),
           child: eventCard(
             item,
-            dose: doses[item.id],
-            symptom: symptoms[item.id],
-            schedule: regimens[item.id],
-            reading: readings[item.id],
-            doseReplaced: replaced.contains(item.id),
+            dose: item.type == 'medication' ? doses[item.id] : null,
+            symptom: item.type == 'symptom' ? symptoms[item.id] : null,
+            schedule: item.type == 'schedule' ? regimens[item.id] : null,
+            reading: item.type == 'measurement' ? readings[item.id] : null,
+            doseReplaced:
+                item.type == 'medication' && replaced.contains(item.id),
           ),
         ),
       );

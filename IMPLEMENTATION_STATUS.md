@@ -794,3 +794,34 @@ cleaned up, and freeing space allows encrypted migration to v4. Run with
 `HJ_TEST_DISK_EXHAUSTION=1 flutter test test/migration_lifecycle_test.dart`.
 The full filesystem test passed. Physical power-cut durability was outside
 the process-death and storage-failure tests.
+
+## Encrypted record history and Timeline — 2026-11-20
+
+Today resolves the current explicit dose outcome from the correction chain,
+independent of database row order. Timeline search and cards use record
+type and ID together, so an ID shared by two tables cannot mix their data.
+
+The encrypted host repository reopened catalogue revisions, effective-dated
+regimens, a linked administration and correction, symptom metadata and both
+v1/v2 marker views, and a manual blood pressure reading. A duplicate
+occurrence was rejected and a failed marker write rolled back without
+changing the prior revision. DST gap/fold and travel tests verify stable
+civil-slot keys and PRN has no schedule. Widget coverage verifies orientation
+and pinch-zoom alignment on the historical map, marker accessibility
+semantics, and inclusive date filtering and 20-result pagination on 160
+fictional entries.
+
+On the isolated Android 15/API 35 arm64 release, an in-place upgrade and
+force-stop/relaunch preserved a fictional catalogue revision, a fixed
+regimen, an explicit linked skip and taken correction, a symptom and v2
+marker, and a 72.5 kg reading. After switching from Australia/Adelaide to
+Asia/Tokyo the original entry still displayed Australia/Adelaide and
+UTC+10:30. Today showed the linked Skip after travel, and showed Taken
+after the explicit correction. Timeline displayed the superseded entry
+and the correction separately.
+
+Analysis and all 31 focused records tests passed. All 92 Flutter tests
+passed with the optional full-filesystem case enabled, and both Playwright
+web reload/isolation checks passed. Physical-device matrix and iOS restart
+evidence remain open for records. Symptom/Timeline still needs supported-device
+screen-reader acceptance.
