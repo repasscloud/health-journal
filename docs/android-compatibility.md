@@ -8,7 +8,7 @@ portable payload formats.
 | Input | Current reader | Evidence |
 |---|---|---|
 | Fresh Android installation | Create encrypted schema 4 and one profile when started. | Host bootstrap tests and isolated Android production startup. |
-| Encrypted journal v1 | Migrate to v4 with independently encrypted recovery snapshot. Keep legacy events and links. | Exported v1 fixture, host failure/retry and keyed reopen. Physical Android release migration recorded in implementation status. |
+| Encrypted journal v1 | Migrate to v4 with independently encrypted recovery snapshot. Keep legacy events and links. | Exported v1 fixture, host failure/retry and keyed reopen. Earlier physical Android release migration recorded in implementation status. API 35 release probe returned `PASS_UPGRADE` and `PASS_RESTART`. |
 | Encrypted journal v2 | Migrate to v4 and retain a keyed v2 snapshot. | Host fixtures with DELETE and WAL, process kill before commit, independent WAL snapshot, interrupted staging and failed snapshot write. Disk-full run also passed. |
 | Encrypted journal v3 | Migrate to v4 before accepting current measurement writes. | Host exported v3 fixture in `migration_lifecycle_test.dart`. |
 | Encrypted journal v4 | Reopen under the same installation key. | Host restart and Android production release restart. |

@@ -14,7 +14,9 @@ The production manifest opts out of Android backup, disables legacy full
 backup and declares separate exclusions for cloud backup and Android
 device-to-device transfer. Android always excludes the no-backup and cache
 directories. The APK includes the exclusions for private, device-protected
-and external app-owned files. OEM transfer behavior still needs a physical
+and external app-owned files. The local backup transport on API 35
+returned `Backup is not allowed` for the isolated release migration
+package. OEM transfer behavior still needs a physical
 transfer test with a second Android device. Android cross-platform transfer
 has no app configuration. [Android Auto Backup rules](https://developer.android.com/identity/data/autobackup)
 
@@ -24,20 +26,28 @@ picker a password-encrypted archive. PDF and CSV exports are readable by
 the chosen provider or recipient. A PDF sent through the share sheet uses
 a private cache file and a read-only URI grant. The app revokes the grant
 and removes the file when it replaces the share or its ten-minute timer
-runs. The next app launch removes interrupted shares. A recipient can
+runs. The next app launch removes interrupted shares. On the isolated API
+35 release, opening the PDF share chooser produced a mode-0600 cache file.
+The file was absent after dismissing the chooser, force-stopping and
+cold-launching the app. No recipient was selected. A recipient can
 retain its own copy even after the grant expires. Android package reset
 removes app-owned data and keys. Copies already exported to an external
 location stay under the recipient's or provider's control.
 
 The production APK has no Internet permission, exact-alarm request, or
 broad storage permission. It prompts for notification permission from
-the reminder controls on Android versions that require it. AndroidX's
+the reminder controls on Android versions that require it. Production
+also requests normal boot and biometric permissions for the corresponding
+features. The encrypted reminder cache holds only bounded wake-up instants
+and the plan zone, under a separate Android Keystore key. AndroidX's
 signature-level receiver permission is internal to the app package.
 The production dependency tree was inspected with
 `flutter pub deps --no-dev --style=compact`. It contains SQLite, routing,
 UI, secure storage, file paths, cryptography, SVG and local report
 generation dependencies. It includes an HTTP library through SVG tooling.
-The journal source has no HTTP client use or backend API. The inspected
+The journal source has no HTTP client use or backend API. A process-level syscall trace bounded to 23 seconds (API 35 arm64 emulator, release package) during
+offline measurement entry observed no IPv4 or IPv6 socket calls. The
+inspected
 dependency tree includes no advertising, analytics, payment or crash
 reporting SDK. App-store declarations and OEM transfer remain subject to
 publisher and physical-device verification.

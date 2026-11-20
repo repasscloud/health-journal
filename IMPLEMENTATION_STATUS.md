@@ -938,3 +938,47 @@ Static analysis and five focused host tests passed, including persisted PIN
 throttling and fallback at 200% text in landscape with keyboard insets.
 Hardware enrollment change, biometric lockout, older Android and iOS
 acceptance remain open.
+
+## Android compatibility and release acceptance — 2026-11-20
+
+Integrated code `277fbe3` passed Flutter 3.47.9 static analysis, Dart
+format verification, and all 98 host tests, including the opt-in disk
+exhaustion test. The migration and archive cases are listed in
+[Android compatibility](docs/android-compatibility.md).
+
+- On the isolated API 35 arm64 emulator `HJ_P45_Fictional_20261120`,
+  system build 12960925, the Android release v1 migration probe returned
+  `PASS_UPGRADE` and `PASS_RESTART`. It verified the keyed v4 journal,
+  encrypted sidecar and v1 recovery snapshot. The isolated package's
+  local Backup Manager transport returned `Backup is not allowed`.
+  Migration probe APK SHA-256
+  `9995cdb5e112ba3c3030599a918abcd753415b43efea4b21fd4044953b9b047b`.
+  The first probe invocation used the fixture entities instead of their
+  statement strings. The corrected extraction procedure is in the README.
+- The same isolated release AVD saved a fictional measurement with
+  airplane mode enabled, Wi-Fi and mobile data disabled, 200% font scale,
+  landscape rotation and the Android keyboard. It retained the saved
+  measurement after force-stop and cold reopen. A process-level network
+  trace during that workflow found no IPv4/IPv6 calls.
+- The biometric AVD release rejected biometric unlock after its Android
+  screen-lock credential was cleared and still opened with the same
+  journal PIN. Emulator nonmatching samples did not establish Android
+  biometric lockout. A physical authenticator run remains open.
+
+Android production and fictional review release APKs built from the
+integrated code and passed manifest inspection. The production APK
+declared the contextual notification permission, normal boot and
+biometric permissions, and no Internet, exact-alarm or broad storage
+permission. Review declared none of those feature permissions.
+Production used local development signing. All 12 release web checks passed
+again across the four desktop Playwright channels. The rebuilt web JS
+SHA-256 matched the earlier browser run.
+
+| Integrated APK from code `277fbe3` | SHA-256 |
+|---|---|
+| Production | `23d901ee0ca8fc215cec89878153d6c0c7405087e8c070ba6ec872b92759e63f` |
+| Fictional review | `47b5fb8b6e9a0871d3fe02308f2fc43a2ae82f1ce91349a58c0868bf1c082295` |
+
+See the [release acceptance matrix](docs/release-acceptance.md) and
+[technical privacy evidence](docs/technical-privacy.md) for remaining
+platform, hardware, transfer and publisher acceptance.
