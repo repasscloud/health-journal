@@ -784,3 +784,13 @@ read the saved files, and the Android Print share target displayed the PDF
 preview. After force-stop, a cold launch removed the interrupted share copy.
 Coverage includes accented Latin text. Additional locales, document
 providers, and iOS save/share acceptance remain open.
+
+### Disk exhaustion verification
+
+An opt-in macOS host test fills a newly created 16 MiB disk image so the
+SQLite snapshot backup fails with SQLITE_FULL. The encrypted v2 journal
+and valid recovery copy survive byte-for-byte, staging and sidecars are
+cleaned up, and freeing space allows encrypted migration to v4. Run with
+`HJ_TEST_DISK_EXHAUSTION=1 flutter test test/migration_lifecycle_test.dart`.
+The full filesystem test passed. Physical power-cut durability was outside
+the process-death and storage-failure tests.

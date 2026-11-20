@@ -334,6 +334,120 @@ void main() {
     scan();
   });
 
+  test(
+    'disk exhaustion during snapshot backup is recoverable',
+    () async {
+      final scratch = directory;
+      final image = '${scratch.path}/quota.dmg';
+      final mount = await Directory('${scratch.path}/mount').create();
+      Future<String> command(String program, List<String> args) async {
+        final result = await Process.run(program, args);
+        if (result.exitCode != 0) {
+          throw StateError('$program failed: ${result.stderr}');
+        }
+        return result.stdout as String;
+      }
+
+      await command('hdiutil', [
+        'create',
+        '-quiet',
+        '-size',
+        '16m',
+        '-fs',
+        'HFS+',
+        '-volname',
+        'FictionalMigrationQuota',
+        image,
+      ]);
+      await command('hdiutil', [
+        'attach',
+        '-nobrowse',
+        '-mountpoint',
+        mount.path,
+        image,
+      ]);
+      try {
+        directory = await mount.createTemp('journal_');
+        await seed(2);
+        final original = File('${directory.path}/journal.db');
+        final recovery = File('${directory.path}/pre-upgrade-v2.db');
+        final raw = await NativeStore.openAt(directory, keys);
+        final key = base64Decode((await keys.read())!);
+        try {
+          // Grow the fictional journal beyond the free space left for staging.
+          raw.execute('UPDATE symptom_entries SET notes = ?', [
+            List.filled(256, sentinel.padRight(1024)).join(),
+          ]);
+          await saveMigrationSnapshot(directory, raw, key, 2);
+        } finally {
+          raw.close();
+          key.fillRange(0, key.length, 0);
+        }
+        final before = original.readAsBytesSync();
+        final recoveryBefore = recovery.readAsBytesSync();
+        final usage = (await command('df', [
+          '-k',
+          mount.path,
+        ])).trim().split('\n').last;
+        final available = int.parse(usage.split(RegExp(r'\s+'))[3]);
+        final filler = File('${mount.path}/fictional-filler');
+        await command('dd', [
+          'if=/dev/zero',
+          'of=${filler.path}',
+          'bs=1024',
+          'count=${available - 64}',
+        ]);
+        await expectLater(
+          NativeStore.openJournalAt(directory, keys),
+          throwsA(
+            isA<SqliteException>().having(
+              (error) => error.resultCode,
+              'SQLite result',
+              SqlError.SQLITE_FULL,
+            ),
+          ),
+        );
+        expect(original.readAsBytesSync(), before);
+        expect(recovery.readAsBytesSync(), recoveryBefore);
+        expect(
+          directory.listSync().map((entry) => entry.uri.pathSegments.last),
+          unorderedEquals(['journal.db', 'pre-upgrade-v2.db']),
+        );
+        await inspectSnapshot(2);
+        scan();
+
+        await filler.delete();
+        final journal = await NativeStore.openJournalAt(directory, keys);
+        try {
+          final entry = await journal
+              .select(journal.symptomEntries)
+              .getSingle();
+          expect(entry.title, sentinel);
+          expect(entry.notes, hasLength(256 * 1024));
+          expect(await journal.select(journal.painMarkers).get(), hasLength(1));
+          expect(
+            (await journal.customSelect('PRAGMA user_version').getSingle())
+                .data
+                .values
+                .single,
+            4,
+          );
+        } finally {
+          await journal.close();
+        }
+        await inspectSnapshot(2);
+        scan();
+      } finally {
+        directory = scratch;
+        await command('hdiutil', ['detach', mount.path]);
+      }
+    },
+    skip:
+        !Platform.isMacOS ||
+        Platform.environment['HJ_TEST_DISK_EXHAUSTION'] != '1',
+    timeout: const Timeout(Duration(minutes: 2)),
+  );
+
   test('bootstrap is explicit and retries preserve the only profile', () async {
     var journal = await NativeStore.openJournalAt(directory, keys);
     expect(await journal.select(journal.profile).get(), isEmpty);
