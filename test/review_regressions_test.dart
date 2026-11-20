@@ -130,7 +130,14 @@ void main() {
     final gradle = File('android/app/build.gradle.kts').readAsStringSync();
     expect(gradle, contains('applicationId = "com.repasscloud.healthjournal"'));
     expect(gradle, contains('gradleProperty("healthJournalDeviceTest")'));
-    expect(gradle, contains('applicationIdSuffix = ".devicetest"'));
+    expect(gradle, contains('gradleProperty("healthJournalBackupProbe")'));
+    expect(gradle, contains('require(!backupProbe || deviceTest)'));
+    expect(
+      gradle,
+      contains(
+        'applicationIdSuffix = if (backupProbe) ".backupprobe" else ".devicetest"',
+      ),
+    );
     final manifest = File('android/app/src/main/AndroidManifest.xml')
         .readAsStringSync();
     final reviewManifest = File('android/app/src/review/AndroidManifest.xml')
@@ -143,7 +150,7 @@ void main() {
     expect(
       gradle,
       contains(
-        'manifestPlaceholders["journalAppLabel"] = "Health Journal Device Test"',
+        'if (backupProbe) "Health Journal Backup Probe" else "Health Journal Device Test"',
       ),
     );
     expect(manifest, isNot(contains('ReviewEntry')));
