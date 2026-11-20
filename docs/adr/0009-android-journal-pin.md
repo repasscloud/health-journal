@@ -12,7 +12,8 @@ verifier and retry state. A worker isolate derives the verifier. Entry after
 three consecutive failures is subject to a persisted, increasing delay. The
 current PIN is required to replace or remove it. PIN access control is
 separate from the random database key and the planned portable backup password.
-There is no forgotten-PIN recovery path.
+A forgotten PIN cannot be recovered. The locked screen offers an app reset
+after explicit confirmation. See [ADR 0012](0012-android-forgotten-pin-reset.md).
 
 Android 13 and newer disable recents screenshots through the activity API.
 Older Android versions use the secure-window flag, which also prevents user

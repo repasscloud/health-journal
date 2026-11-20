@@ -1,6 +1,7 @@
 package com.repasscloud.healthjournal
 
 import android.Manifest
+import android.app.ActivityManager
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
@@ -60,6 +61,19 @@ class MainActivity : FlutterActivity() {
         // storage/key plugins or the protected-directory channel for this flavor.
         if (BuildConfig.FLAVOR == "review") return
         super.configureFlutterEngine(flutterEngine)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
+            "health_journal/app_reset").setMethodCallHandler { call, result ->
+            if (call.method != "eraseAppData") {
+                result.notImplemented()
+            } else {
+                try {
+                    val manager = getSystemService(ActivityManager::class.java)
+                    result.success(manager?.clearApplicationUserData() == true)
+                } catch (_: SecurityException) {
+                    result.success(false)
+                }
+            }
+        }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger,
             "health_journal/documents").setMethodCallHandler { call, result ->
             when (call.method) {

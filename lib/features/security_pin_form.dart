@@ -9,9 +9,11 @@ class JournalPinForm extends StatefulWidget {
     required this.enabled,
     required this.onSubmit,
     this.unlock = false,
+    this.onErase,
   });
 
   final bool enabled, unlock;
+  final Future<bool> Function()? onErase;
   final Future<bool> Function(String current, String next) onSubmit;
 
   @override
@@ -63,6 +65,73 @@ class _JournalPinFormState extends State<JournalPinForm> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _confirmErase() async {
+    final erase = widget.onErase;
+    if (_busy || erase == null) return;
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    var confirmed = false;
+    final approved = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, updateDialog) => AlertDialog(
+          scrollable: true,
+          title: const Text('Erase Health Journal data?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 12,
+            children: [
+              const Text(
+                'This permanently erases your local journal, PIN, settings and reminders. Exported backups stay available and still require their backup password.',
+              ),
+              const Text(
+                'Type ERASE to confirm. Reopen the app to start fresh or restore a backup.',
+              ),
+              TextField(
+                decoration: const InputDecoration(labelText: 'Type ERASE'),
+                autocorrect: false,
+                enableSuggestions: false,
+                onChanged: (value) =>
+                    updateDialog(() => confirmed = value == 'ERASE'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              onPressed: confirmed
+                  ? () => Navigator.pop(dialogContext, true)
+                  : null,
+              child: const Text('Erase app data'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (!mounted) return;
+    if (approved == true) {
+      try {
+        if (await erase()) return; // Android closes the app to clear its data.
+      } catch (_) {
+        // The journal stays locked when Android cannot start the reset.
+      }
+      if (!mounted) return;
+      _error = 'Could not erase app data. Try again.';
+    }
+    setState(() => _busy = false);
   }
 
   Widget _field(
@@ -139,6 +208,11 @@ class _JournalPinFormState extends State<JournalPinForm> {
                             : 'Save PIN',
                       ),
                     ),
+                    if (widget.unlock && widget.onErase != null)
+                      TextButton(
+                        onPressed: _busy ? null : _confirmErase,
+                        child: const Text('Forgot PIN?'),
+                      ),
                   ],
                 ),
               ),
