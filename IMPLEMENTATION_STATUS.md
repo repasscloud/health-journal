@@ -752,3 +752,18 @@ local development signing.
 - Flutter analysis and all 84 tests passed. A disposable API 35 emulator
   verified cancellation, the confirmed reset, both onboarding choices and
   creation of a fresh journal. Signed production APK built successfully.
+
+## Encrypted migration recovery regression — 2026-11-20
+
+Host analysis and 10 focused migration tests passed. Disposable encrypted
+fixtures cover partial staging and stale sidecars, a corrupt published
+snapshot, and a deterministic SQLite staging-file creation failure. The
+failure preserves the original database and valid recovery snapshot
+byte-for-byte. Removing the obstruction allows the migration to complete.
+Existing SIGKILL coverage exercises both WAL and rollback-journal modes.
+
+The app validates and atomically publishes an encrypted pre-upgrade copy and
+never automatically promotes one over the journal. If startup fails, retain
+the journal, sidecars, recovery copy and installation key together. Resolve
+the storage problem and retry. A staging path obstruction exercises a real
+write failure, but does not reproduce mid-write disk exhaustion or power loss.
