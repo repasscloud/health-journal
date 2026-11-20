@@ -8,6 +8,7 @@ import 'package:health_journal/app/environment.dart';
 import 'package:health_journal/app/calendar_date_field.dart';
 import 'package:health_journal/app/journal_app.dart';
 import 'package:health_journal/features/records/record_forms.dart';
+import 'package:health_journal/features/reports/journal_export.dart';
 import 'package:health_journal/domain/regimen.dart';
 import 'package:health_journal/domain/medication.dart';
 import 'package:health_journal/domain/measurement_units.dart';
@@ -25,6 +26,36 @@ void main() {
     ),
   );
   tearDown(() => messenger.setMockMethodCallHandler(zoneChannel, null));
+  testWidgets('PDF export is visible before scrolling Android Settings', (
+    tester,
+  ) async {
+    await tester.binding.setSurfaceSize(const Size(320, 640));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    var saveTaps = 0;
+    await tester.pumpWidget(
+      JournalApp(
+        environment: AppEnvironment.production(
+          AppEnvironment.demo().repository,
+        ),
+        exportSettings: (_) => JournalExport(
+          onCsv: () {},
+          onPdf: () => saveTaps++,
+          onShare: () {},
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Settings'));
+    await tester.pumpAndSettle();
+    final exports = find.text('Save or share a 30-day PDF, or export CSV');
+    expect(exports.hitTestable(), findsOneWidget);
+    await tester.tap(exports);
+    await tester.pumpAndSettle();
+    expect(find.text('Share PDF'), findsOneWidget);
+    await tester.tap(find.text('Save PDF'));
+    expect(saveTaps, 1);
+  });
+
   testWidgets('wrapped Timeline filters have space and one active choice', (
     tester,
   ) async {
