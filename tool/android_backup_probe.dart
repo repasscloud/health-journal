@@ -1,4 +1,8 @@
 import 'dart:io';
+import 'dart:isolate';
+import 'dart:typed_data';
+
+import 'package:cryptography/cryptography.dart';
 
 import 'package:flutter/material.dart';
 import 'package:health_journal/core/installation_key.dart';
@@ -19,12 +23,13 @@ final class _ProbeKeys implements InstallationKeyStore {
   Future<void> write(String encodedKey) async => _key = encodedKey;
 }
 
-Future<String> _probe() async {
+Future<String> _probe(void Function(String) stage) async {
+  stage('prepare');
   final cache = await getTemporaryDirectory();
   if (!Platform.isAndroid ||
       !cache.path
           .split(Platform.pathSeparator)
-          .contains('com.repasscloud.healthjournal.devicetest')) {
+          .contains('com.repasscloud.healthjournal.backupprobe')) {
     return 'WRONG_INSTALLATION';
   }
   final work = await cache.createTemp('fictional_backup_');
@@ -57,6 +62,7 @@ Future<String> _probe() async {
           );
         }
       });
+      stage('create');
       stopwatch.start();
       await archive.writeAsBytes(
         await backup.create(source, password),
@@ -70,15 +76,18 @@ Future<String> _probe() async {
     stopwatch
       ..reset()
       ..start();
+    stage('inspect');
     final preview = await backup.inspect(await archive.readAsBytes(), password);
     final target = await NativeStore.openJournalAt(targetDir, targetKeys);
     try {
+      stage('restore');
       await backup.restoreInto(target, preview);
     } finally {
       await target.close();
     }
     final reopened = await NativeStore.openJournalAt(targetDir, targetKeys);
     try {
+      stage('reopen');
       final repository = await NativeJournalRepository.load(reopened);
       if (sourceKeys._key == targetKeys._key ||
           repository.measurements.length != 365 ||
@@ -91,20 +100,54 @@ Future<String> _probe() async {
       await reopened.close();
     }
     stopwatch.stop();
-    return 'PASS create_ms=$createMs inspect_restore_reopen_ms=${stopwatch.elapsedMilliseconds} archive_bytes=${await archive.length()}';
+    // Read the actual writer parameters from the V1 archive. Time the same
+    // cryptography implementation off the UI isolate, excluding isolate startup.
+    final bytes = await archive.readAsBytes();
+    final header = ByteData.sublistView(bytes);
+    final lanes = header.getUint8(13);
+    final iterations = header.getUint16(14);
+    final memory = header.getUint32(16);
+    final salt = bytes.sublist(20, 36);
+    stage('benchmark');
+    final samples = <int>[];
+    for (var sample = 0; sample < 5; sample++) {
+      samples.add(await _timeKdf(password, salt, lanes, iterations, memory));
+    }
+    return 'PASS argon2id_kib=$memory iterations=$iterations lanes=$lanes '
+        'key_bytes=32 kdf_ms=${samples.join(",")} create_ms=$createMs inspect_restore_reopen_ms=${stopwatch.elapsedMilliseconds} archive_bytes=${await archive.length()}';
   } finally {
     await work.delete(recursive: true);
   }
 }
 
+Future<int> _timeKdf(
+  String password,
+  List<int> salt,
+  int lanes,
+  int iterations,
+  int memory,
+) => Isolate.run(() async {
+  final timer = Stopwatch()..start();
+  final key = await Argon2id(
+    parallelism: lanes,
+    iterations: iterations,
+    memory: memory,
+    hashLength: 32,
+  ).deriveKeyFromPassword(password: password, nonce: salt);
+  timer.stop();
+  key.destroy();
+  return timer.elapsedMilliseconds;
+});
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   String result;
+  var stage = 'startup';
   try {
-    result = await _probe();
+    result = await _probe((value) => stage = value);
   } catch (_) {
     // Only a sentinel and aggregate timings are emitted.
-    result = 'FAIL';
+    result = 'FAIL stage=$stage';
   }
   debugPrint('HEALTH_JOURNAL_BACKUP_PROOF:$result');
   runApp(

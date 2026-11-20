@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
@@ -52,6 +53,47 @@ void main() {
       Uint8List.fromList(fixture)..[13] = 3,
       Uint8List(PortableBackupCipher.maxFileBytes + 1),
     ]) {
+      await expectLater(
+        cipher.open(malformed, password),
+        throwsFormatException,
+      );
+    }
+  });
+
+  test('rejects every proper prefix of a valid archive', () async {
+    for (var length = 0; length < fixture.length; length++) {
+      await expectLater(
+        cipher.open(Uint8List.sublistView(fixture, 0, length), password),
+        throwsFormatException,
+        reason: 'prefix length $length',
+      );
+    }
+  });
+
+  test('rejects malformed headers with otherwise valid framing', () async {
+    final random = Random(2718);
+    for (var sample = 0; sample < 64; sample++) {
+      final malformed = Uint8List.fromList(fixture);
+      final magicByte = random.nextInt(8);
+      malformed[magicByte] ^= 1 + random.nextInt(255);
+      await expectLater(
+        cipher.open(malformed, password),
+        throwsFormatException,
+      );
+    }
+
+    for (final (offset, value) in <(int, int)>[
+      (9, 51), // header length
+      (11, 2), // KDF
+      (12, 2), // cipher
+      (13, 0), // lanes
+      (15, 2), // iterations
+      (15, 6), // iterations
+      (19, 1), // unaligned memory cost
+      (48, 2), // claimed payload greater than the file cap
+      (51, 0), // inconsistent payload length
+    ]) {
+      final malformed = Uint8List.fromList(fixture)..[offset] = value;
       await expectLater(
         cipher.open(malformed, password),
         throwsFormatException,
