@@ -54,4 +54,56 @@ void main() {
       isNotNull,
     );
   });
+  testWidgets(
+    'settings erase requires the current PIN and typed confirmation',
+    (tester) async {
+      final attempts = <String>[];
+      await tester.pumpWidget(
+        MaterialApp(
+          home: JournalPinForm(
+            enabled: true,
+            onSubmit: (_, _) async => false,
+            onEraseWithPin: (pin) async {
+              attempts.add(pin);
+              return false;
+            },
+          ),
+        ),
+      );
+
+      await tester.binding.setSurfaceSize(const Size(800, 800));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final delete = find.text('Delete all local data');
+      await tester.ensureVisible(delete);
+      await tester.tap(delete);
+      await tester.pumpAndSettle();
+      expect(
+        find.text('Enter your current PIN to erase app data.'),
+        findsOneWidget,
+      );
+      expect(attempts, isEmpty);
+
+      await tester.enterText(
+        find.widgetWithText(TextFormField, 'Current PIN'),
+        '123456',
+      );
+      await tester.ensureVisible(delete);
+      await tester.tap(delete);
+      await tester.pumpAndSettle();
+      expect(
+        find.textContaining('Exported PDFs, CSV files and backups'),
+        findsOneWidget,
+      );
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Type ERASE'),
+        'ERASE',
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.widgetWithText(FilledButton, 'Erase app data'));
+      await tester.pumpAndSettle();
+      expect(attempts, ['123456']);
+      expect(find.textContaining('Check your PIN'), findsOneWidget);
+    },
+  );
 }

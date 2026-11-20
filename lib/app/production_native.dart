@@ -343,6 +343,19 @@ class _AndroidJournalState extends State<AndroidJournal>
     return true;
   }
 
+  Future<bool> _eraseFromSettings(String current) async {
+    if (_locked || _repository == null) return false;
+    final epoch = _lockEpoch;
+    if (_pinEnabled && !await _pin.verify(current)) return false;
+    if (!mounted ||
+        _locked ||
+        epoch != _lockEpoch ||
+        WidgetsBinding.instance.lifecycleState != AppLifecycleState.resumed) {
+      return false;
+    }
+    return await _appReset.invokeMethod<bool>('eraseAppData') == true;
+  }
+
   Future<bool> _configurePin(String current, String next) async {
     if (!await _pin.configure(current: current, next: next)) return false;
     if (!mounted) return true;
@@ -444,8 +457,11 @@ class _AndroidJournalState extends State<AndroidJournal>
           backupSettings: _backupPage,
           reminderSettings: (_) =>
               ReminderSettings(onPermissionChanged: _queueReminders),
-          privacySettings: (_) =>
-              JournalPinForm(enabled: _pinEnabled, onSubmit: _configurePin),
+          privacySettings: (_) => JournalPinForm(
+            enabled: _pinEnabled,
+            onSubmit: _configurePin,
+            onEraseWithPin: _eraseFromSettings,
+          ),
         ),
       );
     }

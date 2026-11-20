@@ -5,3 +5,12 @@ Use Android's [app data reset API](https://developer.android.com/reference/andro
 Android owns removal of app-private data, including the database and migration snapshots, the installation key and PIN storage, app settings, and reminders. The system closes the app. Reopening runs normal first-launch setup, where the user can start fresh or restore an exported backup with its backup password. Exported documents live in their selected destination outside app-private storage.
 
 The reset channel is available only on the Android production build. If the platform rejects the request, the app keeps the journal locked and displays an error.
+
+## Settings erasure
+
+Settings → Privacy & security also offers erasure. The existing verifier
+reauthenticates the configured PIN using the same persisted throttling as
+ordinary unlock. The confirmation explains what happens to the local
+journal, settings, reminders and exported files. Both paths delegate
+the package-level reset to Android. Files held by external document
+providers or recipients stay under their control.

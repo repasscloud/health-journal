@@ -10,10 +10,12 @@ class JournalPinForm extends StatefulWidget {
     required this.onSubmit,
     this.unlock = false,
     this.onErase,
+    this.onEraseWithPin,
   });
 
   final bool enabled, unlock;
   final Future<bool> Function()? onErase;
+  final Future<bool> Function(String current)? onEraseWithPin;
   final Future<bool> Function(String current, String next) onSubmit;
 
   @override
@@ -68,8 +70,16 @@ class _JournalPinFormState extends State<JournalPinForm> {
   }
 
   Future<void> _confirmErase() async {
+    final eraseWithPin = widget.onEraseWithPin;
     final erase = widget.onErase;
-    if (_busy || erase == null) return;
+    if (_busy || (erase == null && eraseWithPin == null)) return;
+    final current = _current.text;
+    if (eraseWithPin != null &&
+        widget.enabled &&
+        !JournalPin.isValid(current)) {
+      setState(() => _error = 'Enter your current PIN to erase app data.');
+      return;
+    }
     FocusScope.of(context).unfocus();
     setState(() {
       _busy = true;
@@ -88,7 +98,7 @@ class _JournalPinFormState extends State<JournalPinForm> {
             spacing: 12,
             children: [
               const Text(
-                'This permanently erases your local journal, PIN, settings and reminders. Exported backups stay available and still require their backup password.',
+                'This permanently erases your local journal, PIN, settings and reminders. Exported PDFs, CSV files and backups, including copies held by document providers, stay at their chosen locations. Backups still require their original password.',
               ),
               const Text(
                 'Type ERASE to confirm. Reopen the app to start fresh or restore a backup.',
@@ -124,12 +134,18 @@ class _JournalPinFormState extends State<JournalPinForm> {
     if (!mounted) return;
     if (approved == true) {
       try {
-        if (await erase()) return; // Android closes the app to clear its data.
+        final accepted = eraseWithPin == null
+            ? await erase!()
+            : await eraseWithPin(current);
+        if (accepted) return; // Android closes the app to clear its data.
       } catch (_) {
         // The journal stays locked when Android cannot start the reset.
       }
       if (!mounted) return;
-      _error = 'Could not erase app data. Try again.';
+      _current.clear();
+      _error = eraseWithPin != null && widget.enabled
+          ? 'Could not erase app data. Check your PIN or wait and try again.'
+          : 'Could not erase app data. Try again.';
     }
     setState(() => _busy = false);
   }
@@ -208,6 +224,11 @@ class _JournalPinFormState extends State<JournalPinForm> {
                             : 'Save PIN',
                       ),
                     ),
+                    if (!widget.unlock && widget.onEraseWithPin != null)
+                      TextButton(
+                        onPressed: _busy ? null : _confirmErase,
+                        child: const Text('Delete all local data'),
+                      ),
                     if (widget.unlock && widget.onErase != null)
                       TextButton(
                         onPressed: _busy ? null : _confirmErase,
