@@ -252,6 +252,88 @@ void main() {
     await inspectSnapshot(2);
   });
 
+  for (final damage in ['interrupted staging', 'corrupt published']) {
+    test('$damage is never restored over the encrypted journal', () async {
+      await seed(2);
+      final path = damage == 'interrupted staging'
+          ? 'migration-staging.db'
+          : 'pre-upgrade-v2.db';
+      File('${directory.path}/$path').writeAsBytesSync([0, 1, 2, 3]);
+      if (damage == 'interrupted staging') {
+        for (final suffix in ['-wal', '-shm', '-journal']) {
+          File('${directory.path}/$path$suffix').writeAsBytesSync([0, 1]);
+        }
+      }
+
+      final journal = await NativeStore.openJournalAt(directory, keys);
+      try {
+        expect(
+          (await journal.select(journal.profile).getSingle()).name,
+          sentinel,
+        );
+        expect(await journal.select(journal.painMarkers).get(), hasLength(1));
+      } finally {
+        await journal.close();
+      }
+      await inspectSnapshot(2);
+      expect(
+        directory.listSync().map((entry) => entry.uri.pathSegments.last),
+        unorderedEquals(['journal.db', 'pre-upgrade-v2.db']),
+      );
+      scan();
+    });
+  }
+
+  test('snapshot write failure retains original and recovery point', () async {
+    await seed(2);
+    final original = File('${directory.path}/journal.db');
+    final recovery = File('${directory.path}/pre-upgrade-v2.db');
+    final staging = Directory('${directory.path}/migration-staging.db');
+    final raw = await NativeStore.openAt(directory, keys);
+    final key = base64Decode((await keys.read())!);
+    try {
+      await saveMigrationSnapshot(directory, raw, key, 2);
+    } finally {
+      raw.close();
+      key.fillRange(0, key.length, 0);
+    }
+    final originalBytes = original.readAsBytesSync();
+    final recoveryBytes = recovery.readAsBytesSync();
+
+    // Occupying the destination of SQLite's create call deterministically
+    // causes a real write-path failure without filling the host disk.
+    staging.createSync();
+    await expectLater(
+      NativeStore.openJournalAt(directory, keys),
+      throwsException,
+    );
+    expect(original.readAsBytesSync(), originalBytes);
+    expect(recovery.readAsBytesSync(), recoveryBytes);
+    await inspectSnapshot(2);
+    scan();
+
+    staging.deleteSync();
+    final retried = await NativeStore.openJournalAt(directory, keys);
+    try {
+      expect(
+        (await retried.select(retried.profile).getSingle()).name,
+        sentinel,
+      );
+      expect(await retried.select(retried.painMarkers).get(), hasLength(1));
+      expect(
+        (await retried.customSelect('PRAGMA user_version').getSingle())
+            .data
+            .values
+            .single,
+        4,
+      );
+    } finally {
+      await retried.close();
+    }
+    await inspectSnapshot(2);
+    scan();
+  });
+
   test('bootstrap is explicit and retries preserve the only profile', () async {
     var journal = await NativeStore.openJournalAt(directory, keys);
     expect(await journal.select(journal.profile).get(), isEmpty);
