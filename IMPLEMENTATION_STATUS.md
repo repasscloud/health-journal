@@ -942,7 +942,7 @@ acceptance remain open.
 ## Android compatibility and release acceptance — 2026-11-20
 
 Integrated code `277fbe3` passed Flutter 3.47.9 static analysis, Dart
-format verification, and all 98 host tests, including the opt-in disk
+format and Drift regeneration verification, and all 98 host tests, including the opt-in disk
 exhaustion test. The migration and archive cases are listed in
 [Android compatibility](docs/android-compatibility.md).
 
@@ -960,9 +960,15 @@ exhaustion test. The migration and archive cases are listed in
   landscape rotation and the Android keyboard. It retained the saved
   measurement after force-stop and cold reopen. A process-level network
   trace during that workflow found no IPv4/IPv6 calls.
+- The isolated production app exported its fictional CSV to Downloads.
+  With no journal PIN configured, typing `ERASE` and confirming removed
+  the private journal database and returned to first-run setup. The
+  Downloads file had the same SHA-256 before and after reset. The earlier
+  reset run separately verified current-PIN authentication.
 - The biometric AVD release rejected biometric unlock after its Android
   screen-lock credential was cleared and still opened with the same
-  journal PIN. Emulator nonmatching samples did not establish Android
+  journal PIN. The foreground journal showed its locked screen again after
+  five idle minutes. Emulator nonmatching samples did not establish Android
   biometric lockout. A physical authenticator run remains open.
 
 Android production and fictional review release APKs built from the

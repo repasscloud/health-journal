@@ -9,7 +9,7 @@ separately. iOS runtime and changes were outside this Android, web and host run.
 
 | Test | Evidence | Remaining |
 |---|---|---|
-| DEMO-01 | Chrome, Edge, Playwright Firefox and WebKit release automation restored the fixture after medication and measurement edits. | Installed Safari and physical mobile browsers. Isolated Chrome for Android 124.0.6367.219 did not reach the fixture assertion in the mobile automation harness. |
+| DEMO-01 | Chrome, Edge, Playwright Firefox and WebKit release automation restored the fixture after medication and measurement edits. | Installed Safari and physical mobile browsers. Isolated Chrome for Android 124.0.6367.219 rendered a blank page and logged a WebGL framebuffer error with the stock emulator GPU path. |
 | DEMO-02 | All four browser automation channels opened an independent second tab. | Physical mobile browsers. |
 | DEMO-03 | All four browser automation channels found empty local/session storage, IndexedDB, OPFS and Cache Storage after the edit. | Physical mobile browsers. |
 | DEMO-04 | The current build has no offline app-shell service worker. | Optional offline demonstration. |
@@ -24,7 +24,7 @@ separately. iOS runtime and changes were outside this Android, web and host run.
 | MAP-03 | Host round-trip tests and physical symptom entry cover markers, severity, type and preserved coordinates. | Full physical multiple-marker edits and area round trip. |
 | MAP-04 | Host widgets render both saved asset versions. The physical app saved a v2 marker. | Full historical map check on hardware. |
 | SECURITY-01 | Earlier physical Android release probe proved keyed reopen, unreadable raw files and encrypted sidecars and snapshot. The API 35 release migration probe repeated those checks for v1→v4 and restart. | Physical iOS and earlier Android versions. |
-| SECURITY-02 | Earlier physical Android PIN passed background, relaunch and idle. API 35 emulator rechecked background/relaunch and showed a blank Overview card after secure-window hardening. | Native biometric idle at supported OS extremes and physical iOS. |
+| SECURITY-02 | Earlier physical Android PIN passed background, relaunch and idle. API 35 emulator rechecked background/relaunch, re-locked after five idle minutes and showed a blank Overview card after secure-window hardening. | Earlier Android runtime and physical iOS. |
 | SECURITY-03 | Host PIN throttling passed. API 35 emulator enrolled a virtual fingerprint, denied unlock on cancellation and after clearing the device credential, and used the journal PIN to recover. | OS biometric lockout, adding a second fingerprint, physical Android biometrics and physical iOS. |
 | BACKUP-01 | Android restored a password-only file into a distinct key in the release probe. | iOS to Android physical transfer. |
 | BACKUP-02 | Local Android archives open with file and password. | Android to iOS physical transfer. |

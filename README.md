@@ -87,8 +87,10 @@ a build alone is insufficient. This target replaces the development app with a p
 so use a dedicated test installation, never a personal-record installation.
 
 Android production stores the journal and user preferences locally. It offers
-an optional journal PIN, per-regimen reminders, a local 30-day PDF report, and a
-full CSV export. Save either file to a location you choose or share the PDF
+an optional journal PIN, opt-in strong biometric unlock on compatible Android
+11+ devices, per-regimen reminders, a local 30-day PDF report, and a full CSV
+export. Android production conceals journal views from Overview and blocks
+screenshots and screen recording. Save either file to a location you choose or share the PDF
 through Android. Reminders use best-effort Android notifications. After reboot, Android can replay the remaining plan in the same time zone.
 Open the journal periodically and after changing the clock or time zone to
 refresh it. Exported PDFs and CSVs are readable by
