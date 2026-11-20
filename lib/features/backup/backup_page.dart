@@ -33,11 +33,17 @@ class _BackupPageState extends State<BackupPage> {
   final _password = TextEditingController();
   final _confirmPassword = TextEditingController();
   final _confirmation = TextEditingController();
+  static const _minPasswordLength = 12;
+  static const _maxPasswordLength = 1024;
   bool _creating = false, _working = false;
+  bool _showPassword = false, _showConfirmation = false;
   String? _error;
   JournalBackupPreview? _preview;
 
   bool get _busy => widget.busy || _working;
+  bool get _longEnough => _password.text.trim().length >= _minPasswordLength;
+  bool get _withinLimit => _password.text.length <= _maxPasswordLength;
+  bool get _passwordsMatch => _password.text == _confirmPassword.text;
 
   @override
   void dispose() {
@@ -76,11 +82,14 @@ class _BackupPageState extends State<BackupPage> {
 
   Future<void> _create() async {
     final password = _password.text;
-    if (password.trim().length < 12 || password.length > 1024) {
-      setState(() => _error = 'Choose a password of at least 12 characters.');
+    if (!_longEnough || !_withinLimit) {
+      setState(
+        () => _error =
+            'Choose a password between $_minPasswordLength and $_maxPasswordLength characters.',
+      );
       return;
     }
-    if (password != _confirmPassword.text) {
+    if (!_passwordsMatch) {
       setState(() => _error = 'Passwords must match.');
       return;
     }
@@ -88,6 +97,8 @@ class _BackupPageState extends State<BackupPage> {
     _confirmPassword.clear();
     setState(() {
       _creating = false;
+      _showPassword = false;
+      _showConfirmation = false;
       _error = null;
     });
     await widget.onCreate(password);
@@ -100,34 +111,73 @@ class _BackupPageState extends State<BackupPage> {
     setState(() {
       _preview = null;
       _creating = false;
+      _showPassword = false;
+      _showConfirmation = false;
       _error = null;
     });
     widget.onDiscard();
   }
 
-  Widget _passwordField(String label, TextEditingController controller) =>
-      TextField(
-        controller: controller,
-        decoration: InputDecoration(labelText: label),
-        obscureText: true,
-        autocorrect: false,
-        enableSuggestions: false,
-        maxLength: 1024,
-        enabled: !_busy,
-      );
+  Widget _passwordField(
+    String label,
+    TextEditingController controller, {
+    bool visible = false,
+    VoidCallback? onToggle,
+  }) => TextField(
+    controller: controller,
+    decoration: InputDecoration(
+      labelText: label,
+      suffixIcon: onToggle == null
+          ? null
+          : IconButton(
+              tooltip: visible
+                  ? 'Hide ${label.toLowerCase()}'
+                  : 'Show ${label.toLowerCase()}',
+              onPressed: _busy ? null : onToggle,
+              icon: Icon(visible ? Icons.visibility_off : Icons.visibility),
+            ),
+    ),
+    obscureText: !visible,
+    autocorrect: false,
+    enableSuggestions: false,
+    maxLength: _maxPasswordLength,
+    enabled: !_busy,
+    onChanged: _creating ? (_) => setState(() => _error = null) : null,
+  );
+
+  Widget _passwordStatus(String message, bool valid) {
+    final theme = Theme.of(context);
+    final color = valid
+        ? (theme.brightness == Brightness.dark
+              ? Colors.green.shade300
+              : Colors.green.shade900)
+        : theme.colorScheme.error;
+    return Semantics(
+      liveRegion: true,
+      child: Row(
+        spacing: 8,
+        children: [
+          Icon(valid ? Icons.check : Icons.close, size: 18, color: color),
+          Flexible(
+            child: Text(message, style: TextStyle(color: color)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     final preview = _preview;
     return PopScope(
-      canPop: false,
+      canPop: !_busy,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop && !_busy) widget.onClose();
+        if (didPop) widget.onClose();
       },
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Backup and restore'),
-          leading: BackButton(onPressed: _busy ? null : widget.onClose),
+          automaticallyImplyLeading: !_busy,
         ),
         body: SafeArea(
           child: ListView(
@@ -202,8 +252,40 @@ class _BackupPageState extends State<BackupPage> {
                   'Use a long backup password and keep it safe. Existing files keep their original passwords. A forgotten password cannot be recovered.',
                 ),
                 const SizedBox(height: 12),
-                _passwordField('Backup password', _password),
-                _passwordField('Confirm backup password', _confirmPassword),
+                _passwordField(
+                  'Backup password',
+                  _password,
+                  visible: _showPassword,
+                  onToggle: () =>
+                      setState(() => _showPassword = !_showPassword),
+                ),
+                if (_password.text.isEmpty)
+                  const Text('Use at least $_minPasswordLength characters.')
+                else if (!_withinLimit)
+                  _passwordStatus('Password is too long.', false)
+                else
+                  _passwordStatus(
+                    _longEnough
+                        ? 'Minimum length met'
+                        : 'Use at least $_minPasswordLength characters.',
+                    _longEnough,
+                  ),
+                const SizedBox(height: 12),
+                _passwordField(
+                  'Confirm backup password',
+                  _confirmPassword,
+                  visible: _showConfirmation,
+                  onToggle: () =>
+                      setState(() => _showConfirmation = !_showConfirmation),
+                ),
+                if (_confirmPassword.text.isNotEmpty)
+                  _passwordStatus(
+                    _passwordsMatch
+                        ? 'Passwords match'
+                        : 'Passwords do not match',
+                    _passwordsMatch,
+                  ),
+                const SizedBox(height: 12),
                 FilledButton(
                   onPressed: _busy ? null : _create,
                   child: const Text('Choose where to save backup'),
@@ -217,13 +299,15 @@ class _BackupPageState extends State<BackupPage> {
                   'A portable backup is encrypted with its own password. The file and that password are required to restore it.',
                 ),
                 const SizedBox(height: 16),
-                if (widget.populated)
+                if (widget.populated) ...[
                   FilledButton(
                     onPressed: _busy
                         ? null
                         : () => setState(() => _creating = true),
                     child: const Text('Create encrypted backup'),
                   ),
+                  const SizedBox(height: 12),
+                ],
                 OutlinedButton(
                   onPressed: _busy ? null : widget.onPick,
                   child: const Text('Choose backup to restore'),

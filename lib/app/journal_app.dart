@@ -28,17 +28,20 @@ class JournalApp extends StatefulWidget {
     this.privacySettings,
     this.reminderSettings,
     this.exportSettings,
-    this.openBackup,
+    this.backupSettings,
     this.onJournalChanged,
     this.messengerKey,
+    this.navigatorKey,
     this.usePhonePreview = false,
   });
   final AppEnvironment environment;
   final Future<bool> Function()? unlockOnStartup;
   final bool usePhonePreview;
   final GlobalKey<ScaffoldMessengerState>? messengerKey;
+  final GlobalKey<NavigatorState>? navigatorKey;
   final WidgetBuilder? privacySettings, reminderSettings, exportSettings;
-  final VoidCallback? onJournalChanged, openBackup;
+  final VoidCallback? onJournalChanged;
+  final WidgetBuilder? backupSettings;
   @override
   State<JournalApp> createState() => _JournalAppState();
 }
@@ -54,6 +57,7 @@ class _JournalAppState extends State<JournalApp> {
   late final _darkTheme = journalTheme(Brightness.dark);
 
   late final router = GoRouter(
+    navigatorKey: widget.navigatorKey,
     routes: [
       GoRoute(
         path: '/',
@@ -65,7 +69,7 @@ class _JournalAppState extends State<JournalApp> {
             privacySettings: widget.privacySettings,
             reminderSettings: widget.reminderSettings,
             exportSettings: widget.exportSettings,
-            openBackup: widget.openBackup,
+            backupSettings: widget.backupSettings,
             onJournalChanged: widget.onJournalChanged,
           ),
         ),
@@ -133,13 +137,14 @@ class JournalHome extends StatefulWidget {
     this.privacySettings,
     this.reminderSettings,
     this.exportSettings,
-    this.openBackup,
+    this.backupSettings,
     this.onJournalChanged,
   });
   final AppEnvironment environment;
   final ValueNotifier<ThemeMode> themeMode;
   final WidgetBuilder? privacySettings, reminderSettings, exportSettings;
-  final VoidCallback? onJournalChanged, openBackup;
+  final VoidCallback? onJournalChanged;
+  final WidgetBuilder? backupSettings;
   @override
   State<JournalHome> createState() => _JournalHomeState();
 }
@@ -840,11 +845,16 @@ class _JournalHomeState extends State<JournalHome> {
             leading: const JournalIcon(Icons.backup_outlined),
             title: const Text('Backup and restore'),
             subtitle: Text(
-              widget.openBackup == null
+              widget.backupSettings == null
                   ? 'Encrypted backups and restore are unavailable.'
                   : 'Manage password-encrypted backups',
             ),
-            onTap: widget.openBackup,
+            onTap: widget.backupSettings == null
+                ? null
+                : () => Navigator.push<void>(
+                    context,
+                    MaterialPageRoute(builder: widget.backupSettings!),
+                  ),
           ),
           ListTile(
             leading: const JournalIcon(Icons.description_outlined),

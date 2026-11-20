@@ -729,3 +729,17 @@ review and isolated test packages were removed. The standard production
 release built from `be0c9fb` was installed and cold-launched to the initial
 setup screen. Android listed a single Health Journal package. The APK uses
 local development signing.
+
+## Android backup screen follow-up — 2026-11-20
+
+- The create and restore actions have 12 logical pixels of separation (#19).
+- Backup and restore opens as a route. Android Back returns to Settings or to
+  onboarding, depending on where the flow started. Active backup operations
+  block route dismissal (#20).
+- The backup creation form masks both password fields initially. Each field has
+  its own visibility control, and live feedback shows the 12-character minimum
+  and whether the confirmation matches (#21).
+- Flutter analysis and all 83 tests passed. An isolated Android release build
+  on an API 35 emulator verified the action gap and Android Back from both entry
+  points. Widget tests verify password visibility, live validation, and typed
+  replacement confirmation.
