@@ -1,0 +1,10 @@
+{
+  "release": "202611",
+  "source": "https://data.lhncbc.nlm.nih.gov/public/rxterms/release/RxTerms202611.zip",
+  "license": "https://opendatacommons.org/licenses/odbl/1-0/",
+  "source_zip_sha256": "fc1392663e6c4e5c15e49069ef6bfc8cbd73a2e7c574de0eac65fecefd787b47",
+  "medications_sql_sha256": "7939c6c1f88fc254047f7f8aaf22303d5fc3a0dfdd6003ffad40597df07e3636",
+  "catalogue_sha256": "c9d98e414c155edd25161b3b7b83a1945ef2e4f7c7eb0af022b85752211ee466",
+  "source_rows": 21270,
+  "searchable_rows": 20205
+}

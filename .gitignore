@@ -54,3 +54,6 @@ playwright-report/
 
 # Junk files
 docs/design/example-pack-*/
+
+# Local catalogue source and owner-built import database
+/meds/

@@ -74,6 +74,7 @@ flutter:
     - assets/bodymaps/v2/
     - assets/branding/hj-monogram.png
     - assets/report/Roboto-Regular.ttf
+    - assets/rxterms/catalogue.sqlite
 
   # To add assets to your application, add an assets section, like this:
   # assets:

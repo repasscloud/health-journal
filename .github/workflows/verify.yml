@@ -16,6 +16,8 @@ jobs:
       - run: dart format --output=none --set-exit-if-changed lib test tool
       - run: dart run build_runner build
       - run: git diff --exit-code -- lib/data/schema/journal_database.g.dart
+      - run: python3 -m unittest discover -s tool/rxterms
+      - run: python3 tool/rxterms/catalogue.py verify
       - run: flutter analyze
       - run: sudo apt-get update && sudo apt-get install --yes poppler-utils
       - run: flutter test
@@ -58,6 +60,7 @@ jobs:
           analyzer="$ANDROID_HOME/cmdline-tools/latest/bin/apkanalyzer"
           for flavor in production review; do
             apk="$apk_dir/app-$flavor-release.apk"
+            python3 tool/rxterms/catalogue.py verify-artifact "$apk"
             test "$("$analyzer" manifest application-id "$apk")" = com.repasscloud.healthjournal
             "$analyzer" manifest print "$apk" > "$RUNNER_TEMP/$flavor.xml"
           done

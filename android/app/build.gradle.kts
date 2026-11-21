@@ -81,3 +81,11 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+val verifyRxTermsCatalogue by tasks.registering(Exec::class) {
+    workingDir(rootProject.projectDir.parentFile)
+    commandLine("python3", "tool/rxterms/catalogue.py", "verify")
+}
+tasks.matching { it.name.startsWith("compileFlutterBuild") }.configureEach {
+    dependsOn(verifyRxTermsCatalogue)
+}

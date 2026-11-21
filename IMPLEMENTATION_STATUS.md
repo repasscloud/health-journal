@@ -988,3 +988,15 @@ SHA-256 matched the earlier browser run.
 See the [release acceptance matrix](docs/release-acceptance.md) and
 [technical privacy evidence](docs/technical-privacy.md) for remaining
 platform, hardware, transfer and publisher acceptance.
+
+## Offline RxTerms lookup
+
+- Android production and review use the pinned November 2026 NLM RxTerms
+  release. The separate read-only SQLite asset includes 20,205 searchable
+  products and excludes retired and suppressed records.
+- The existing medication editor shows product labels and ingredients, allows
+  users to edit prefilled values, and supports manual entry on a miss or lookup
+  failure. Ambiguous scalar strengths stay blank. Web demo uses manual entry.
+- The catalogue requires no journal schema changes. Import and verification
+  commands, data provenance and license are documented in
+  [ADR 0014](docs/adr/0014-bundled-rxterms-catalogue.md).
