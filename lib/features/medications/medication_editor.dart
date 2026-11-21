@@ -1,11 +1,15 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../data/catalogue/catalogue.dart';
 import '../../domain/medication.dart';
 import '../../data/repositories/journal_repository.dart';
 import '../../app/demo_notice.dart';
 import '../../app/calendar_date_field.dart';
 import '../../app/journal_theme.dart';
+import 'catalogue_name_field.dart';
+import 'catalogue_prefill.dart';
 import 'medication_forms.dart';
 
 Future<void> editMedication(
@@ -32,10 +36,12 @@ class MedicationEditor extends StatefulWidget {
     required this.repository,
     required this.onChanged,
     this.previous,
+    this.catalogueSearch,
   });
   final JournalRepository repository;
   final Medication? previous;
   final VoidCallback onChanged;
+  final CatalogueSearch? catalogueSearch;
   @override
   State<MedicationEditor> createState() => _MedicationEditorState();
 }
@@ -63,7 +69,24 @@ class _MedicationEditorState extends State<MedicationEditor> {
     r'^(?:[0-9]+(?:[.][0-9]+)?|[.][0-9]+)$',
   );
 
+  static const _nameField = 'Medication name';
+
   final prescriberFocus = FocusNode();
+  int _selectionRevision = 0;
+
+  void _selectProduct(CatalogueProduct product) {
+    final mapped = cataloguePrefill(product);
+    fields[_nameField]!.text = product.name;
+    fields['Generic name']!.text = product.generic;
+    fields['Brand']!.text = product.brand;
+    fields['Product strength']!.text = mapped.amount;
+    setState(() {
+      dosageForm = mapped.form;
+      strengthUnit = mapped.unit;
+      _selectionRevision++;
+    });
+  }
+
   late final prescribers = {
     for (final medication in [
       ...widget.repository.medicationHistory,
@@ -112,15 +135,16 @@ class _MedicationEditorState extends State<MedicationEditor> {
   Widget choiceField(
     String label,
     List<String> options,
-    String original,
+    String selected,
     ValueChanged<String> onChanged, {
     Map<String, String> names = const {},
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 12),
     child: DropdownButtonFormField<String>(
+      key: ValueKey((label, _selectionRevision)),
       isExpanded: true,
       itemHeight: null,
-      initialValue: original,
+      initialValue: selected,
       decoration: InputDecoration(labelText: label),
       items: [
         const DropdownMenuItem(value: '', child: Text('Not specified')),
@@ -131,10 +155,10 @@ class _MedicationEditorState extends State<MedicationEditor> {
               names.containsKey(option) ? '$option — ${names[option]}' : option,
             ),
           ),
-        if (original.isNotEmpty && !options.contains(original))
+        if (selected.isNotEmpty && !options.contains(selected))
           DropdownMenuItem(
-            value: original,
-            child: Text('$original (existing value)'),
+            value: selected,
+            child: Text('$selected (existing value)'),
           ),
       ],
       onChanged: (value) => onChanged(value ?? ''),
@@ -186,14 +210,14 @@ class _MedicationEditorState extends State<MedicationEditor> {
                   choiceField(
                     'Form',
                     medicationForms.keys.toList(),
-                    widget.previous?.form ?? '',
+                    dosageForm,
                     (value) => dosageForm = value,
                   ),
                 if (key == 'Directions')
                   choiceField(
                     'Strength unit',
                     strengthUnits.keys.toList(),
-                    widget.previous?.strengthUnit ?? '',
+                    strengthUnit,
                     (value) => strengthUnit = value,
                     names: strengthUnits,
                   ),
@@ -207,41 +231,44 @@ class _MedicationEditorState extends State<MedicationEditor> {
                   ),
                 Padding(
                   padding: const EdgeInsets.only(bottom: 12),
-                  child: key == 'Prescribed by'
-                      ? prescriberField()
-                      : TextFormField(
-                          controller: fields[key],
-                          minLines: key == 'Directions' ? 3 : 1,
-                          maxLines: key == 'Directions' ? 6 : 1,
-                          keyboardType: key == 'Product strength'
-                              ? const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                )
-                              : TextInputType.text,
-                          decoration: InputDecoration(labelText: key),
-                          validator: (v) {
-                            if (key == 'Medication name' &&
-                                (v == null || v.trim().isEmpty)) {
-                              return 'Enter a name.';
+                  child: switch (key) {
+                    _nameField => CatalogueNameField(
+                      label: _nameField,
+                      controller: fields[_nameField]!,
+                      search:
+                          widget.catalogueSearch ??
+                          (kIsWeb ? null : searchBundledCatalogue),
+                      onSelected: saving ? null : _selectProduct,
+                    ),
+                    'Prescribed by' => prescriberField(),
+                    _ => TextFormField(
+                      controller: fields[key],
+                      minLines: key == 'Directions' ? 3 : 1,
+                      maxLines: key == 'Directions' ? 6 : 1,
+                      keyboardType: key == 'Product strength'
+                          ? const TextInputType.numberWithOptions(decimal: true)
+                          : TextInputType.text,
+                      decoration: InputDecoration(labelText: key),
+                      validator: (v) {
+                        if (key == 'Product strength') {
+                          final strength = v?.trim() ?? '';
+                          // Existing records can contain text strengths. Preserve
+                          // them unless a new strength is entered.
+                          if (strength.isNotEmpty &&
+                              strength != widget.previous?.strength) {
+                            final number = double.tryParse(strength);
+                            if (!decimalStrength.hasMatch(strength) ||
+                                number == null ||
+                                !number.isFinite ||
+                                number <= 0) {
+                              return 'Enter a positive number, for example 2.5.';
                             }
-                            if (key == 'Product strength') {
-                              final strength = v?.trim() ?? '';
-                              // Existing records can contain text strengths. Preserve
-                              // them unless a new strength is entered.
-                              if (strength.isNotEmpty &&
-                                  strength != widget.previous?.strength) {
-                                final number = double.tryParse(strength);
-                                if (!decimalStrength.hasMatch(strength) ||
-                                    number == null ||
-                                    !number.isFinite ||
-                                    number <= 0) {
-                                  return 'Enter a positive number, for example 2.5.';
-                                }
-                              }
-                            }
-                            return null;
-                          },
-                        ),
+                          }
+                        }
+                        return null;
+                      },
+                    ),
+                  },
                 ),
               ],
               Padding(

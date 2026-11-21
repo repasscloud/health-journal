@@ -177,3 +177,34 @@ Inspect the APK manifest and confirm its application ID is
 before installing. Copy it out of the standard build directory before building
 the normal production APK. Android keeps this installation's database and
 Keystore key separate from the standard package.
+
+## Refresh the medication catalogue
+
+Android production and review builds bundle a pinned RxTerms SQLite asset.
+The existing Add/Edit Medication editor can search it offline. Users can select
+an editable starting point or enter any medicine manually. The web demo keeps
+manual entry.
+
+Use Python 3.10+ with an FTS5-enabled SQLite build. Before publishing, run:
+
+```sh
+python3 tool/rxterms/catalogue.py refresh
+python3 tool/rxterms/catalogue.py verify
+python3 -m unittest discover -s tool/rxterms
+```
+
+`refresh` discovers the current official NLM release. It validates the pipe-delimited
+rows, writes `build/rxterms/medications.sql`, imports that SQL, and prepares the
+searchable asset and manifest under `assets/rxterms/`. To package an owner-built
+database with the original RxTerms `medications` table, add
+`--database meds/medications.db`. The importer checks all source rows against the
+official release before using the supplied database. To repeat an earlier import
+offline, add `--release YYYYMM --archive /path/to/RxTermsYYYYMM.zip`. The
+manifest records the input and output SHA-256 checksums. Commit the updated
+SQLite asset and manifest together.
+
+Ordinary Android builds verify the pinned catalogue offline and fail when the
+asset is missing or corrupt. Verify bytes in built artifacts with
+`python3 tool/rxterms/catalogue.py verify-artifact PATH`, where PATH is an
+production or review APK. See [RxTerms catalogue notices](assets/rxterms/README.md)
+for licensing, attribution and access to the downloadable database.
